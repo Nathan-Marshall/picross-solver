@@ -1,0 +1,15 @@
+Picross Plan:
+
+1. Initial shadowing pass along each axis
+    a) For each run, we know the known span as well as the bounds
+    b) For each tile we know all the possible A runs and gaps that it could belong to
+    c) If a tile belongs to only one possible run or gap, fill or cross the tile
+        - On initial pass, crosses are only known if the line is complete
+
+2. Additional passes
+    a) Clip run bounds if it is divided by crosses and the run can't fit in a segment
+        - need subdivision system
+    b) Clip run bounds while the edge is adjacent to an external fill
+    c) Clip run bounds where placement of the run would result in an edge adjacent to an internal fill
+        - can also subdivide on this
+DONEd) Expand known run to adjacent internal fills
