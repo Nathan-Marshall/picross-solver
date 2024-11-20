@@ -6,22 +6,28 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
 
 
-def display_picross(puzzle, row_and_col_clues, block=True, btn_solve_callback=None):
+def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_solve_callback=None):
     # Convert the puzzle to a numpy array
     puzzle_array = np.array(puzzle)
 
     # Create a figure and a set of subplots
     fig, ax = plt.subplots(figsize=(6, 6))
+    fig.canvas.manager.set_window_title(name)
     fig.set_facecolor('black')
 
     # Display the puzzle as an image
-    # Use a custom color map to display -1 values as white
+    # Use a custom color map
     cmap = plt.cm.colors.ListedColormap(['grey', 'grey', 'black'])
     bounds = [-2, -0.5, 0.5, 2]
     norm = plt.cm.colors.BoundaryNorm(bounds, cmap.N)
     ax.imshow(puzzle_array, cmap=cmap, norm=norm)
 
     # Draw grid lines
+    ax.set_xticks(np.arange(-.5, len(puzzle[0]), 1), minor=False)
+    ax.set_yticks(np.arange(-.5, len(puzzle), 1), minor=False)
+    ax.grid(which='major', color='#444', linestyle='-', linewidth=2)
+    ax.set_axisbelow(True)
+
     ax.set_xticks(np.arange(-.5, len(puzzle[0]), 1), minor=True)
     ax.set_yticks(np.arange(-.5, len(puzzle), 1), minor=True)
     ax.grid(which='minor', color='#444', linestyle='-', linewidth=2)
@@ -32,31 +38,32 @@ def display_picross(puzzle, row_and_col_clues, block=True, btn_solve_callback=No
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
-            sat = 0 if clue_run.is_complete() else 1
+            sat = 0 if clue_run.is_fixed() else 1
             if not hasattr(clue_run, 'color'):
                 clue_run.color = colorsys.hls_to_rgb(hue, .5, sat)
 
-            ax.text(-1 - j / 3, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
+            ax.text(-1 - j / 2, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
 
     # Add column clues
     for i, clue in enumerate(row_and_col_clues[1]):
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
-            sat = 0 if clue_run.is_complete() else 1
+            sat = 0 if clue_run.is_fixed() else 1
             if not hasattr(clue_run, 'color'):
                 clue_run.color = colorsys.hls_to_rgb(hue, .5, sat)
 
-            ax.text(i, -1 - j / 3, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
+            ax.text(i, -1 - j / 2, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
 
     # Draw an 'X' for each tile with an underlying value of -1
+    cross_radius = 0.35
     for i in range(len(puzzle)):
         for j in range(len(puzzle[i])):
             if puzzle[i][j] == -1:
-                ax.plot([j - 0.5, j + 0.5], [i - 0.5, i + 0.5], color='black')
-                ax.plot([j - 0.5, j + 0.5], [i + 0.5, i - 0.5], color='black')
+                ax.plot([j - cross_radius, j + cross_radius], [i - cross_radius, i + cross_radius], color='black')
+                ax.plot([j - cross_radius, j + cross_radius], [i + cross_radius, i - cross_radius], color='black')
 
-    # Draw a rectangle outline for each ClueRun object
+    # Draw each ClueRun overlay
     for axis in range(2):
         for i, clue in enumerate(row_and_col_clues[axis]):
             for j, clue_run in enumerate(clue):
@@ -80,48 +87,38 @@ def display_picross(puzzle, row_and_col_clues, block=True, btn_solve_callback=No
 
 
 def draw_clue_run(ax, clue_run, line_index, run_index, num_runs, vertical):
-    if clue_run.is_complete():
+    if clue_run.is_fixed():
         return
 
     # offset each run's line so that overlapping bounds are visible
     offset = line_index + 0.8 * ((run_index + 1) / (num_runs + 1) - 0.5)
 
-    bounds_start = clue_run.bound_start - 0.4
-    bounds_end = clue_run.bound_end - 1 + 0.4
-    known_start = clue_run.known_start() - 0.4
-    known_end = clue_run.known_end() - 1 + 0.4
-
     # Draw the main line along the entire length of the bounds, dashed in the unknown sections
-    if clue_run.has_known():
-        plot_with_axis_swap(ax, vertical,
-                            [bounds_start, known_start],
-                            [offset, offset],
-                            color=clue_run.color, linestyle='--')
+    for i in range(clue_run.first_start(), clue_run.last_end()):
+        if not clue_run.can_contain(i):
+            continue
 
+        linestyle = 'solid' if clue_run.must_contain(i) else 'dashed'
+        line_start = i - 0.3 if not clue_run.can_contain(i-1) or clue_run.length == 1 else i - 0.5
+        line_end = i + 0.3 if not clue_run.can_contain(i+1) or clue_run.length == 1 else i + 0.5
         plot_with_axis_swap(ax, vertical,
-                            [known_start, known_end],
+                            [line_start, line_end],
                             [offset, offset],
-                            color=clue_run.color)
+                            color=clue_run.color, linestyle=linestyle)
 
-        plot_with_axis_swap(ax, vertical,
-                            [known_end, bounds_end],
-                            [offset, offset],
-                            color=clue_run.color, linestyle='--')
-    else:
-        plot_with_axis_swap(ax, vertical,
-                            [bounds_start, bounds_end],
-                            [offset, offset],
-                            color=clue_run.color, linestyle='--')
+    # Draw small arrows to indicate each potential start and end
+    for start in clue_run.starts:
+        plot_arrow(ax, vertical, False, start - 0.4, offset, clue_run.color)
+        plot_arrow(ax, vertical, True, (clue_run.end(start) - 1) + 0.4, offset, clue_run.color)
 
-    # Draw small arrows to indicate where the known tiles start and stop
+    # Fill in the last start and first end arrows a little, to help indicate where the center known section is
     plot_with_axis_swap(ax, vertical,
-                        [known_start, known_start + 0.1, known_start],
-                        [offset - 0.1, offset, offset + 0.1],
+                        [clue_run.last_start() - 0.4, clue_run.last_start() - 0.4],
+                        [offset - 0.1, offset + 0.1],
                         color=clue_run.color)
-
     plot_with_axis_swap(ax, vertical,
-                        [known_end, known_end - 0.1, known_end],
-                        [offset - 0.1, offset, offset + 0.1],
+                        [(clue_run.first_end() - 1) + 0.4, (clue_run.first_end() - 1) + 0.4],
+                        [offset - 0.1, offset + 0.1],
                         color=clue_run.color)
 
 
@@ -132,6 +129,13 @@ def plot_with_axis_swap(ax, swap, *args, **kwargs):
         args = tuple(temp_list)
 
     ax.plot(*args, **kwargs)
+
+
+def plot_arrow(ax, vertical, flip, on_axis_offset, cross_axis_offset, color):
+    plot_with_axis_swap(ax, vertical,
+                        [on_axis_offset, on_axis_offset + (-0.1 if flip else 0.1), on_axis_offset],
+                        [cross_axis_offset - 0.1, cross_axis_offset, cross_axis_offset + 0.1],
+                        color=color)
 
 
 def block_until_windows_closed():
