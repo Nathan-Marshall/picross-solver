@@ -47,8 +47,16 @@ def cross(line, i):
     line[i] = -1
 
 
+# Find the index of the next tile of the given type
+def find_next_start(line, i, tile_type=FILLED):
+    for j in range(i, len(line)):
+        if line[j] == tile_type:
+            return j
+    return len(line)
+
+
 # Find the index of the first tile in a run of like tiles
-def find_start(line, i, tile_type=FILLED):
+def find_start_backward(line, i, tile_type=FILLED):
     for j in range(i, -1, -1):
         if line[j] != tile_type:
             return j + 1
@@ -93,34 +101,24 @@ def verify(puzzle, row_and_col_clues_raw):
 
 
 def verify_line(puzzle_line, clue_run_lengths):
-    # All tiles must be known
-    for tile in puzzle_line:
-        if tile == UNKNOWN:
-            return False
-
-    prev_run_end = 0
-    for clue_run_length in clue_run_lengths:
-        # Find the start of the next run
-        run_start = find_end(puzzle_line, prev_run_end, tile_type=CROSSED)
-
-        # Reached the end of the line without encountering the run
-        if run_start == len(puzzle_line):
-            return False
-
-        # Find the end of the run
-        run_end = find_end(puzzle_line, run_start)
-
-        # Verify that the run was the correct length
-        if run_end != run_start + clue_run_length:
-            return False
-
-        prev_run_end = run_end
-
-    # Verify that it's all crosses until the end of the line
-    line_end = find_end(puzzle_line, prev_run_end, tile_type=CROSSED)
-    return line_end == len(puzzle_line)
+    runs = get_run_starts_ends_lengths(puzzle_line)
+    lengths = [length for _, _, length in runs]
+    return lengths == clue_run_lengths
 
 
+def get_run_starts_ends_lengths(puzzle_line, tile_type=FILLED):
+    runs = []
+
+    end = 0
+    while end != len(puzzle_line):
+        start = find_next_start(puzzle_line, end, tile_type)
+        end = find_end(puzzle_line, start, tile_type)
+        length = end - start
+
+        if length > 0:
+            runs.append((start, end, length))
+
+    return runs
 
 
 def init_line_clue(line_clue_run_lengths, line):
@@ -156,10 +154,9 @@ def solving_pass(puzzle, row_and_col_clues):
 
 
 def solve_line(puzzle_line, line_clue):
-    for run_index, clue_run in enumerate(line_clue):
+    for clue_run in line_clue:
         # Any solving logic that does not require other clue runs
         clue_run.solve_self()
-        clue_run.apply()
 
     # Cross tiles that are not part of any ClueRuns
     cross_unclaimed_tiles(puzzle_line, line_clue)
@@ -465,7 +462,7 @@ class ClueRun:
             if not is_filled(self.line, i):
                 continue
 
-            run_start = find_start(self.line, i)
+            run_start = find_start_backward(self.line, i)
 
             if self.is_partially_exclusive_last(run_start, i + 1):
                 last_partially_exclusive_filled = i
