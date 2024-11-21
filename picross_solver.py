@@ -71,39 +71,40 @@ def find_end(line, i, tile_type=FILLED):
     return len(line)
 
 
-def solve(puzzle, row_and_col_clues, row_and_col_clues_raw, display_steps=False):
-    initial_solving_pass(puzzle, row_and_col_clues, row_and_col_clues_raw)
-
-    if display_steps:
-        display_picross(puzzle, row_and_col_clues, block=False)
-
-    puzzle_copy = np.array((0, 0))
-    while not np.array_equal(puzzle, puzzle_copy) or has_dirty_clue_runs(row_and_col_clues):
-        puzzle_copy = puzzle.copy()
-        clean_all_clue_runs(row_and_col_clues)
-
-        solving_pass(puzzle, row_and_col_clues)
-
-        if display_steps:
-            display_picross(puzzle, row_and_col_clues, block=False)
-
-    return verify(puzzle, row_and_col_clues_raw)
+def get_all_lines(puzzle):
+    return [puzzle_line
+            for puzzle_view in puzzle_and_transpose(puzzle)
+            for puzzle_line in puzzle_view]
 
 
-def verify(puzzle, row_and_col_clues_raw):
-    for axis, puzzle_view in enumerate(puzzle_and_transpose(puzzle)):
-        clues_raw = row_and_col_clues_raw[axis]
-        for line_index, puzzle_line in enumerate(puzzle_view):
-            clue_run_lengths = clues_raw[line_index]
-            if not verify_line(puzzle_line, clue_run_lengths):
-                return False
-    return True
+def get_all_line_clues(row_and_col_clues):
+    return [line_clue
+            for axis_clues in row_and_col_clues
+            for line_clue in axis_clues]
 
 
-def verify_line(puzzle_line, clue_run_lengths):
-    runs = get_run_starts_ends_lengths(puzzle_line)
-    lengths = [length for _, _, length in runs]
-    return lengths == clue_run_lengths
+def get_all_clue_runs(row_and_col_clues):
+    return [clue_run
+            for line_clue in get_all_line_clues(row_and_col_clues)
+            for clue_run in line_clue]
+
+
+def get_lines_and_clues(puzzle, row_and_col_clues):
+    puzzle_lines = get_all_lines(puzzle)
+    line_clues = get_all_line_clues(row_and_col_clues)
+    return zip(puzzle_lines, line_clues)
+
+
+def get_all_line_clues_raw(row_and_col_clues_raw):
+    return [line_clue_raw
+            for axis_clues_raw in row_and_col_clues_raw
+            for line_clue_raw in axis_clues_raw]
+
+
+def get_lines_and_clues_raw(puzzle, row_and_col_clues_raw):
+    puzzle_lines = get_all_lines(puzzle)
+    line_clues_raw = get_all_line_clues_raw(row_and_col_clues_raw)
+    return zip(puzzle_lines, line_clues_raw)
 
 
 def get_run_starts_ends_lengths(puzzle_line, tile_type=FILLED):
@@ -121,13 +122,50 @@ def get_run_starts_ends_lengths(puzzle_line, tile_type=FILLED):
     return runs
 
 
-def init_line_clue(line_clue_run_lengths, line):
+def verify(puzzle, row_and_col_clues_raw):
+    return all(verify_line(puzzle_line, clue_run_lengths)
+               for puzzle_line, clue_run_lengths in get_lines_and_clues_raw(puzzle, row_and_col_clues_raw))
+
+
+def verify_line(puzzle_line, clue_run_lengths):
+    runs = get_run_starts_ends_lengths(puzzle_line)
+    lengths = [length for _, _, length in runs]
+    return lengths == clue_run_lengths
+
+
+def solve(puzzle, row_and_col_clues, row_and_col_clues_raw, display_steps=False):
+    initial_solving_pass(puzzle, row_and_col_clues, row_and_col_clues_raw)
+
+    if display_steps:
+        display_picross(puzzle, row_and_col_clues, block=False)
+
+    puzzle_copy = np.array((0, 0))
+    while not np.array_equal(puzzle, puzzle_copy) or has_dirty_clue_runs(row_and_col_clues):
+        puzzle_copy = puzzle.copy()
+        clean_all_clue_runs(row_and_col_clues)
+
+        solving_pass(puzzle, row_and_col_clues)
+
+        if display_steps:
+            display_picross(puzzle, row_and_col_clues, block=False)
+
+
+def initial_solving_pass(puzzle, row_and_col_clues, row_and_col_clues_raw):
+    for axis, puzzle_view in enumerate(puzzle_and_transpose(puzzle)):
+        line_clues = row_and_col_clues[axis]
+        line_clues_raw = row_and_col_clues_raw[axis]
+        for line_index, puzzle_line in enumerate(puzzle_view):
+            clue_run_lengths = line_clues_raw[line_index]
+            line_clues.append(init_line_clue(clue_run_lengths, puzzle_line))
+
+
+def init_line_clue(clue_run_lengths, line):
     line_clue = []
-    deduction = len(line) - (sum(line_clue_run_lengths) + len(line_clue_run_lengths) - 1)
+    deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
 
     run_start = 0
     clue_run = None
-    for run_length in line_clue_run_lengths:
+    for run_length in clue_run_lengths:
         clue_run = ClueRun(line, clue_run, run_length, run_start, run_start + run_length + deduction)
         clue_run.apply()
         line_clue.append(clue_run)
@@ -136,21 +174,9 @@ def init_line_clue(line_clue_run_lengths, line):
     return line_clue
 
 
-def initial_solving_pass(puzzle, row_and_col_clues, row_and_col_clues_raw):
-    for axis, puzzle_view in enumerate(puzzle_and_transpose(puzzle)):
-        clues = row_and_col_clues[axis]
-        clues_raw = row_and_col_clues_raw[axis]
-        for line_index, puzzle_line in enumerate(puzzle_view):
-            clue_run_lengths = clues_raw[line_index]
-            clues.append(init_line_clue(clue_run_lengths, puzzle_line))
-
-
 def solving_pass(puzzle, row_and_col_clues):
-    for axis, puzzle_view in enumerate(puzzle_and_transpose(puzzle)):
-        clues = row_and_col_clues[axis]
-        for line_index, puzzle_line in enumerate(puzzle_view):
-            line_clue = clues[line_index]
-            solve_line(puzzle_line, line_clue)
+    for puzzle_line, line_clue in get_lines_and_clues(puzzle, row_and_col_clues):
+        solve_line(puzzle_line, line_clue)
 
 
 def solve_line(puzzle_line, line_clue):
@@ -179,19 +205,13 @@ def cross_unclaimed_tiles(line, line_clue):
 
 
 def has_dirty_clue_runs(row_and_col_clues):
-    for axis_clues in row_and_col_clues:
-        for line_clue in axis_clues:
-            for clue_run in line_clue:
-                if clue_run.dirty:
-                    return True
-    return False
+    return any(clue_run.dirty
+               for clue_run in get_all_clue_runs(row_and_col_clues))
 
 
 def clean_all_clue_runs(row_and_col_clues):
-    for axis_clues in row_and_col_clues:
-        for line_clue in axis_clues:
-            for clue_run in line_clue:
-                clue_run.dirty = False
+    for clue_run in get_all_clue_runs(row_and_col_clues):
+        clue_run.dirty = False
 
 
 class ClueRun:

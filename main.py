@@ -6,6 +6,7 @@ from functools import partial
 from picross_display import display_picross, block_until_windows_closed
 from picross_import import picross_import
 from picross_solver import solve
+from picross_solver import verify
 
 
 all_puzzle_clues = picross_import('puzzles/Large.txt')
@@ -16,14 +17,14 @@ def solve_main(i, display, display_steps=False):
 
     puzzle = np.zeros((len(puzzle_clues_raw[0]), len(puzzle_clues_raw[1])), dtype=int)
     row_and_col_clues = [[], []]
-    result = solve(puzzle, row_and_col_clues, puzzle_clues_raw, display_steps=display_steps)
+    solve(puzzle, row_and_col_clues, puzzle_clues_raw, display_steps=display_steps)
 
     if display:
         puzzle_name = 'Puzzle ' + str(i)
         solve_callback = partial(solve_main, i, display, display_steps=display_steps)
         display_picross(puzzle, row_and_col_clues, name=puzzle_name, btn_solve_callback=solve_callback)
 
-    return result
+    return verify(puzzle, puzzle_clues_raw)
 
 
 def solve_all_main(display_errors):
@@ -47,5 +48,5 @@ def solve_all_main(display_errors):
     print('solved:' + str(solved_count) + ', unsolved:' + str(unsolved_count) + ', time:' + str(time_elapsed))
 
 
-solve_all_main(True)
+solve_all_main(False)
 # solve_main(16, True)
