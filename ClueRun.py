@@ -159,8 +159,7 @@ class ClueRun:
 
     # Removes first_start and any other starts within n-1 tiles after it.
     def shrink_start(self, n=1):
-        if n > self.last_start() - self.first_start():
-            assert False
+        assert n <= self.last_start() - self.first_start()
 
         if n <= 0:
             return
@@ -175,8 +174,7 @@ class ClueRun:
 
     # Removes last_start and any other starts within n-1 tiles before it.
     def shrink_end(self, n=1):
-        if n > self.last_start() - self.first_start():
-            assert False
+        assert n <= self.last_start() - self.first_start()
 
         if n <= 0:
             return
