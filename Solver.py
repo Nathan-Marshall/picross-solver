@@ -93,6 +93,24 @@ class Solver:
         for puzzle_line, line_clue in self.get_lines_and_clues():
             self.solve_line(puzzle_line, line_clue)
 
+            for start, end, length in get_run_starts_ends_lengths(puzzle_line):
+                containing_clue_runs = [clue_run for clue_run in line_clue if clue_run.can_contain(start, end)]
+
+                if containing_clue_runs:
+                    # The first clue run that can contain this run must not start after the run does.
+                    first_run = containing_clue_runs[0]
+                    n = first_run.last_end() - (start + first_run.length)
+                    first_run.shrink_end(n)
+
+                    assert first_run.starts
+
+                    # The last clue run that can contain this run must not end before the run does.
+                    last_run = containing_clue_runs[-1]
+                    n = (end - last_run.length) - last_run.first_start()
+                    last_run.shrink_start(n)
+
+                    assert last_run.starts
+
     @staticmethod
     def solve_line(puzzle_line, line_clue):
         for clue_run in line_clue:
