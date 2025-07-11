@@ -93,24 +93,6 @@ class Solver:
         for puzzle_line, line_clue in self.get_lines_and_clues():
             self.solve_line(puzzle_line, line_clue)
 
-            for start, end, length in get_run_starts_ends_lengths(puzzle_line):
-                containing_clue_runs = [clue_run for clue_run in line_clue if clue_run.can_contain(start, end)]
-
-                if containing_clue_runs:
-                    # The first clue run that can contain this run must not start after the run does.
-                    first_run = containing_clue_runs[0]
-                    n = first_run.last_end() - (start + first_run.length)
-                    first_run.shrink_end(n)
-
-                    assert first_run.starts
-
-                    # The last clue run that can contain this run must not end before the run does.
-                    last_run = containing_clue_runs[-1]
-                    n = (end - last_run.length) - last_run.first_start()
-                    last_run.shrink_start(n)
-
-                    assert last_run.starts
-
     @staticmethod
     def solve_line(puzzle_line, line_clue):
         for clue_run in line_clue:
@@ -119,6 +101,73 @@ class Solver:
 
         # Cross tiles that are not part of any ClueRuns
         Solver.cross_unclaimed_tiles(puzzle_line, line_clue)
+
+        # Iterate filled runs
+        for start, end, length in get_run_starts_ends_lengths(puzzle_line):
+            first_run = None
+            last_run = None
+
+            guaranteed_run_start = None  # Last start whose resulting run contains this filled run
+            guaranteed_run_end = None  # First end whose resulting run contains this filled run
+            # If positive, it means all clue runs that can contain this filled run are exactly the length of the
+            # guaranteed run
+            guaranteed_length = None
+
+            for clue_run in line_clue:
+                # Get all starts for which the resulting run contains this filled run
+                clue_run_starts = clue_run.get_containing_starts(start, end)
+
+                if not clue_run_starts:
+                    continue  # Clue run cannot contain this filled run
+
+                for clue_run_start in clue_run_starts:
+                    # Find last start whose resulting run contains this filled run
+                    if guaranteed_run_start is None or guaranteed_run_start < clue_run_start:
+                        guaranteed_run_start = clue_run_start
+
+                    # Find first end whose resulting run contains this filled run
+                    if guaranteed_run_end is None or guaranteed_run_end > clue_run.end(clue_run_start):
+                        guaranteed_run_end = clue_run.end(clue_run_start)
+
+                last_run = clue_run
+
+                if first_run is None:
+                    first_run = clue_run
+
+            # Calculate the length of the guaranteed run
+            if guaranteed_length is None:
+                guaranteed_length = guaranteed_run_end - guaranteed_run_start
+
+            # Set guaranteed_length to -1 if there is a clue run with a larger length that can contain it.
+            # -1 indicates that the exact length is not guaranteed.
+            for clue_run in line_clue:
+                if guaranteed_length != -1 and clue_run.length > guaranteed_length:
+                    guaranteed_length = -1
+                    break
+
+            if guaranteed_run_start is not None:
+                # Fill guaranteed run
+                fill(puzzle_line, guaranteed_run_start, guaranteed_run_end)
+
+                # If filled run is same length as all runs that can contain it, cross extremities
+                if guaranteed_length is not None and guaranteed_length > 0:
+                    if guaranteed_run_start > 0:
+                        cross(puzzle_line, guaranteed_run_start - 1)
+                    if guaranteed_run_end < len(puzzle_line):
+                        cross(puzzle_line, guaranteed_run_end)
+
+            if first_run is None:
+                continue
+
+            # # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
+            #  # speeds up the algorithm over this
+            # The first clue run that can contain this run must not start after the run does.
+            n = first_run.last_end() - (start + first_run.length)
+            first_run.shrink_end(n)
+
+            # The last clue run that can contain this run must not end before the run does.
+            n = (end - last_run.length) - last_run.first_start()
+            last_run.shrink_start(n)
 
     # If a tile is guaranteed not to be part of any run in the line, cross it out
     @staticmethod

@@ -15,6 +15,9 @@ class ClueRun:
 
         self.dirty = False  # cleared every pass; if true, indicates that the run was modified this pass
 
+    def assert_valid(self):
+        assert len(self.starts) > 0
+
     # Index of the first tile of the run in the first possible position
     def first_start(self):
         return self.starts[0]
@@ -73,6 +76,13 @@ class ClueRun:
                 return False
 
         return True
+
+    # Return the subset of this ClueRun's starts for which the resulting run contains the entire given run
+    def get_containing_starts(self, run_start, run_end=None):
+        if run_end is None:
+            run_end = run_start + 1
+
+        return [start for start in self.starts if self.contains_with_start(start, run_start, run_end)]
 
     # The previous ClueRun's last_end, or the start of the line if this is the first ClueRun
     def prev_end(self):
@@ -231,70 +241,64 @@ class ClueRun:
         #  - get the set of all starts from all ClueRuns that contain a given filled run
         #  - determine the tiles overlapped by all of the potential runs
         #  - can this replace regular rules for partially exclusive tiles?
-        # TODO:
-        #  if filled run is same length as all owners, but owner is unknown, cross extremities
-        # TODO:
-        #  Consider the union between this ClueRun's starts and the prev_run's starts.
-        #  - For every combination of starts which are in sequence and the resulting runs are not overlapping, all
-        #  filled tiles exclusively owned by the compound must be contained within the resulting runs, otherwise discard
-        #  that combination of start-ClueRun pairs. If a start-ClueRun pair is not included in any of the valid
-        #  combinations, then discard that start from that ClueRun.
-        #  - After finishing all combinations. Do it again, but include prev_run.prev_run as well, and so on.
-        #  - If a line is complete, it will be covered by this rule.
 
-        # # SOLVE SELF 4)
-        # # Tighten bounds to surround the first and last exclusively owned filled tiles
-        #
-        # # Find the first filled run not shared by a preceding ClueRun
-        # first_partially_exclusive_filled = None
-        #
-        # for i in range(self.first_start(), self.last_end()):
-        #     if not is_filled(self.line, i):
-        #         continue
-        #
-        #     run_end = find_end(self.line, i)
-        #
-        #     if self.is_partially_exclusive_first(i, run_end):
-        #         first_partially_exclusive_filled = i
-        #         break
-        #
-        #     i = run_end
-        #
-        # # Find the last filled run not shared by a succeeding ClueRun.
-        # last_partially_exclusive_filled = None
-        #
-        # for i in range(self.last_end() - 1, self.first_start() - 1, -1):
-        #     if not is_filled(self.line, i):
-        #         continue
-        #
-        #     run_start = find_start_backward(self.line, i)
-        #
-        #     if self.is_partially_exclusive_last(run_start, i + 1):
-        #         last_partially_exclusive_filled = i
-        #         break
-        #
-        #     i = run_start - 1
-        #
-        # if first_partially_exclusive_filled is not None:
-        #     # Must not start after the first filled tile which cannot be shared by a prior ClueRun.
-        #     n = self.last_end() - (first_partially_exclusive_filled + self.length)
-        #     self.shrink_end(n)
-        #
-        # if last_partially_exclusive_filled is not None:
-        #     # Must not end before the last filled tile which cannot be shared by a later ClueRun.
-        #     n = (last_partially_exclusive_filled + 1 - self.length) - self.first_start()
-        #     self.shrink_start(n)
-        #
-        # assert self.starts
-        #
-        # if first_partially_exclusive_filled is not None and last_partially_exclusive_filled is not None:
-        #     # Fill all tiles between first_exclusive_filled and last_exclusive_filled
-        #     for i in range(first_partially_exclusive_filled, last_partially_exclusive_filled + 1):
-        #         fill(self.line, i)
-        #
-        # self.apply()
-        # if self.is_fixed():
-        #     return
+        #########################################
+
+        # SOLVE SELF 4)
+        # Tighten bounds to surround the first and last exclusively owned filled tiles
+
+        # Find the first filled run not shared by a preceding ClueRun
+        first_partially_exclusive_filled = None
+
+        for i in range(self.first_start(), self.last_end()):
+            if not is_filled(self.line, i):
+                continue
+
+            run_end = find_end(self.line, i)
+
+            if self.is_partially_exclusive_first(i, run_end):
+                first_partially_exclusive_filled = i
+                break
+
+            i = run_end
+
+        # Find the last filled run not shared by a succeeding ClueRun.
+        last_partially_exclusive_filled = None
+
+        for i in range(self.last_end() - 1, self.first_start() - 1, -1):
+            if not is_filled(self.line, i):
+                continue
+
+            run_start = find_start_backward(self.line, i)
+
+            if self.is_partially_exclusive_last(run_start, i + 1):
+                last_partially_exclusive_filled = i
+                break
+
+            i = run_start - 1
+
+        if first_partially_exclusive_filled is not None:
+            # Must not start after the first filled tile which cannot be shared by a prior ClueRun.
+            n = self.last_end() - (first_partially_exclusive_filled + self.length)
+            self.shrink_end(n)
+
+        if last_partially_exclusive_filled is not None:
+            # Must not end before the last filled tile which cannot be shared by a later ClueRun.
+            n = (last_partially_exclusive_filled + 1 - self.length) - self.first_start()
+            self.shrink_start(n)
+
+        self.assert_valid()
+
+        if first_partially_exclusive_filled is not None and last_partially_exclusive_filled is not None:
+            # Fill all tiles between first_exclusive_filled and last_exclusive_filled
+            for i in range(first_partially_exclusive_filled, last_partially_exclusive_filled + 1):
+                fill(self.line, i)
+
+        self.apply()
+        if self.is_fixed():
+            return
+
+        #########################################
 
         # SOLVE SELF 5)
         # If a tile is fixed, other ClueRuns before must end before or start after (with a gap).

@@ -23,24 +23,30 @@ def is_known(line, i):
     return not is_unknown(line, i)
 
 
-def fill(line, i):
-    if is_filled(line, i):
-        return
+def fill(line, start, end=None):
+    if end is None:
+        end = start + 1
 
-    if is_crossed(line, i):
-        assert False
+    for i in range(start, end):
+        if is_filled(line, i):
+            continue
 
-    line[i] = 1
+        assert not is_crossed(line, i)
+
+        line[i] = FILLED
 
 
-def cross(line, i):
-    if is_crossed(line, i):
-        return
+def cross(line, start, end=None):
+    if end is None:
+        end = start + 1
 
-    if is_filled(line, i):
-        assert False
+    for i in range(start, end):
+        if is_crossed(line, i):
+            continue
 
-    line[i] = -1
+        assert not is_filled(line, i)
+
+        line[i] = CROSSED
 
 
 # Find the index of the next tile of the given type

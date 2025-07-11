@@ -47,5 +47,5 @@ def solve_all_main(display_errors):
     print('solved:' + str(solved_count) + ', unsolved:' + str(unsolved_count) + ', time:' + str(time_elapsed))
 
 
-solve_all_main(False)
+solve_all_main(True)
 # solve_main(16, True)
