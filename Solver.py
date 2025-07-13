@@ -2,15 +2,27 @@ import numpy as np
 from line_profiler_pycharm import profile
 
 from ClueRun import ClueRun
+from Tile import Tile
 from helpers import *
 from picross_display import display_picross
 
 
 class Solver:
-    def __init__(self, puzzle, row_and_col_clues_raw):
-        self.puzzle = puzzle
+    def __init__(self, puzzle_raw, row_and_col_clues_raw):
+        self.puzzle_raw = puzzle_raw
+        self.puzzle = Solver.init_tiles(puzzle_raw)
         self.row_and_col_clues_raw = row_and_col_clues_raw
         self.row_and_col_clues = [[], []]
+
+    @staticmethod
+    def init_tiles(puzzle_raw):
+        puzzle_arr = []
+        for line_raw in puzzle_raw:
+            line = []
+            for i in range(len(line_raw)):
+                line.append(Tile(line_raw, i))
+            puzzle_arr.append(line)
+        return np.array(puzzle_arr, Tile)
 
     def get_all_lines(self):
         return [puzzle_line
@@ -56,16 +68,16 @@ class Solver:
         self.initial_solving_pass()
 
         if display_steps:
-            display_picross(self.puzzle, self.row_and_col_clues, block=False)
+            display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
 
-        puzzle_copy = np.array((0, 0))
-        while not np.array_equal(self.puzzle, puzzle_copy) or self.has_dirty_clue_runs():
-            puzzle_copy = self.puzzle.copy()
+        puzzle_raw_copy = np.array((0, 0))
+        while not np.array_equal(self.puzzle_raw, puzzle_raw_copy) or self.has_dirty_clue_runs():
+            puzzle_raw_copy = self.puzzle_raw.copy()
             self.clean_all_clue_runs()
             self.solving_pass()
 
             if display_steps:
-                display_picross(self.puzzle, self.row_and_col_clues, block=False)
+                display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
 
     def initial_solving_pass(self):
         for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle)):
@@ -105,8 +117,8 @@ class Solver:
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
-            first_run = None
-            last_run = None
+            first_containing_clue_run = None
+            last_containing_clue_run = None
 
             guaranteed_run_start = None  # Last start whose resulting run contains this filled run
             guaranteed_run_end = None  # First end whose resulting run contains this filled run
@@ -116,24 +128,24 @@ class Solver:
 
             for clue_run in line_clue:
                 # Get all starts for which the resulting run contains this filled run
-                clue_run_starts = clue_run.get_containing_starts(start, end)
+                potential_runs = clue_run.get_containing_potential_runs(start, end)
 
-                if not clue_run_starts:
+                if not potential_runs:
                     continue  # Clue run cannot contain this filled run
 
-                for clue_run_start in clue_run_starts:
+                for potential_run in potential_runs:
                     # Find last start whose resulting run contains this filled run
-                    if guaranteed_run_start is None or guaranteed_run_start < clue_run_start:
-                        guaranteed_run_start = clue_run_start
+                    if guaranteed_run_start is None or guaranteed_run_start < potential_run.start:
+                        guaranteed_run_start = potential_run.start
 
                     # Find first end whose resulting run contains this filled run
-                    if guaranteed_run_end is None or guaranteed_run_end > clue_run.end(clue_run_start):
-                        guaranteed_run_end = clue_run.end(clue_run_start)
+                    if guaranteed_run_end is None or guaranteed_run_end > potential_run.end:
+                        guaranteed_run_end = potential_run.end
 
-                last_run = clue_run
+                last_containing_clue_run = clue_run
 
-                if first_run is None:
-                    first_run = clue_run
+                if first_containing_clue_run is None:
+                    first_containing_clue_run = clue_run
 
             # Calculate the length of the guaranteed run
             if guaranteed_length is None:
@@ -157,24 +169,24 @@ class Solver:
                     if guaranteed_run_end < len(puzzle_line):
                         cross(puzzle_line, guaranteed_run_end)
 
-            if first_run is None:
+            if first_containing_clue_run is None:
                 continue
 
             # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
             #  speeds up the algorithm over this
             # The first clue run that can contain this run must not start after the run does.
-            n = first_run.last_end() - (start + first_run.length)
-            first_run.shrink_end(n)
+            n = first_containing_clue_run.last_end() - (start + first_containing_clue_run.length)
+            first_containing_clue_run.shrink_end(n)
 
             # The last clue run that can contain this run must not end before the run does.
-            n = (end - last_run.length) - last_run.first_start()
-            last_run.shrink_start(n)
+            n = (end - last_containing_clue_run.length) - last_containing_clue_run.first_start()
+            last_containing_clue_run.shrink_start(n)
 
     # If a tile is guaranteed not to be part of any run in the line, cross it out
     @staticmethod
     def cross_unclaimed_tiles(line, line_clue):
         for i in range(len(line)):
-            if is_known(line, i):
+            if line[i].is_known():
                 continue
 
             can_contain = False

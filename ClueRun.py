@@ -1,5 +1,6 @@
 from line_profiler_pycharm import profile
 
+from PotentialRun import PotentialRun
 from helpers import *
 
 
@@ -13,41 +14,52 @@ class ClueRun:
         self.next_run = None
 
         self.length = length
-        self.starts = [i for i in range(first_start, last_end - length + 1)]
+        self.potential_runs = [PotentialRun(self, i) for i in range(first_start, last_end - length + 1)]
+
+        for potential_run in self.potential_runs:
+            for tile in potential_run.tiles():
+                tile.potential_runs.append(potential_run)
 
         self.dirty = False  # cleared every pass; if true, indicates that the run was modified this pass
 
+    def remove_run(self, potential_run):
+        self.potential_runs.remove(potential_run)
+        potential_run.remove_from_tiles()
+        self.dirty = True
+        return potential_run
+
+    def remove_first(self):
+        first_run = self.potential_runs.pop(0)
+        first_run.remove_from_tiles()
+        self.dirty = True
+        return first_run
+
+    def remove_last(self):
+        last_run = self.potential_runs.pop()
+        last_run.remove_from_tiles()
+        self.dirty = True
+        return last_run
+
     def assert_valid(self):
-        assert len(self.starts) > 0
+        assert len(self.potential_runs) > 0
 
-    # Index of the first tile of the run in the first possible position
+    # Index of the first potential run
     def first_start(self):
-        return self.starts[0]
+        return self.potential_runs[0].start
 
-    # Index of the first tile of the run in the last possible position
-    def last_start(self):
-        return self.starts[-1]
-
-    # Index past the last tile of a run, given the start tile
-    def end(self, start):
-        return start + self.length
-
-    # Index past the last tile of the run in the first possible position
+    # Index past the last tile of the first potential run
     def first_end(self):
-        return self.end(self.first_start())
+        return self.potential_runs[0].end
 
-    # Index past the last tile of the run in the last possible position
+    # Index of the last potential run
+    def last_start(self):
+        return self.potential_runs[-1].start
+
+    # Index past the last tile of the last potential run
     def last_end(self):
-        return self.end(self.last_start())
+        return self.potential_runs[-1].end
 
-    # True if the entire given run of tiles would be part of this run, assuming this run starts at the given start.
-    def contains_with_start(self, start, run_start, run_end=None):
-        if run_end is None:
-            run_end = run_start + 1
-
-        return start <= run_start < run_end <= self.end(start)
-
-    # True if the entire given run of tiles would be part of this run for any of the possible start positions
+    # True if any potential run entirely contains the given run
     def can_contain(self, run_start, run_end=None):
         if run_end is None:
             run_end = run_start + 1
@@ -55,32 +67,32 @@ class ClueRun:
         if run_end - run_start > self.length:
             return False
 
-        for start in self.starts:
-            if start > run_start:
+        for potential_run in self.potential_runs:
+            if potential_run.start > run_start:
                 break
 
-            if run_end <= self.end(start):
+            if run_end <= potential_run.end:
                 return True
 
         return False
 
-    # True if the entire given run of tiles is part of this run for every possible start position
+    # True if all potential runs entirely contain the given run
     def must_contain(self, run_start, run_end=None):
         if run_end is None:
             run_end = run_start + 1
 
-        for start in self.starts:
-            if not self.contains_with_start(start, run_start, run_end):
+        for potential_run in self.potential_runs:
+            if not potential_run.contains(run_start, run_end):
                 return False
 
         return True
 
     # Return the subset of this ClueRun's starts for which the resulting run contains the entire given run
-    def get_containing_starts(self, run_start, run_end=None):
+    def get_containing_potential_runs(self, run_start, run_end=None):
         if run_end is None:
             run_end = run_start + 1
 
-        return [start for start in self.starts if self.contains_with_start(start, run_start, run_end)]
+        return [potential_run for potential_run in self.potential_runs if potential_run.contains(run_start, run_end)]
 
     # The previous ClueRun's last_end, or the start of the line if this is the first ClueRun
     def prev_end(self):
@@ -112,11 +124,11 @@ class ClueRun:
         if run_end is None:
             run_end = run_start + 1
 
-        # Return false if this ClueRun can't contain this run
+        # Return false if this ClueRun can't contain the run
         if not self.can_contain(run_start, run_end):
             return False
 
-        # Return false if any of the previous ClueRuns can contain this run
+        # Return false if any of the preceding ClueRuns can contain the run
         clue_run = self.prev_run
         while clue_run is not None:
             if clue_run.can_contain(run_start, run_end):
@@ -130,11 +142,11 @@ class ClueRun:
         if run_end is None:
             run_end = run_start + 1
 
-        # Return false if this ClueRun can't contain this run
+        # Return false if this ClueRun can't contain the run
         if not self.can_contain(run_start, run_end):
             return False
 
-        # Return false if any of the next ClueRuns can contain this run
+        # Return false if any of the following ClueRuns can contain the run
         clue_run = self.next_run
         while clue_run is not None:
             if clue_run.can_contain(run_start, run_end):
@@ -143,27 +155,9 @@ class ClueRun:
 
         return True
 
-    # Assuming this ClueRun starts at the given start, return true if the resulting run would contain a cross
-    def contains_cross_with_start(self, start):
-        for i in range(start, self.end(start)):
-            if is_crossed(self.line, i):
-                return True
-        return False
-
-    # Assuming this ClueRun starts at the given start, return true if the resulting run would be adjacent to another
-    # filled tile
-    def run_too_long_with_start(self, start):
-        if start > 0 and is_filled(self.line, start - 1):
-            return True
-
-        if self.end(start) < len(self.line) and is_filled(self.line, self.end(start)):
-            return True
-
-        return False
-
-    # True if there is only one possible start position for this run
+    # True if there is only one potential run
     def is_fixed(self):
-        return len(self.starts) == 1
+        return len(self.potential_runs) == 1
 
     # Removes first_start and any other starts within n-1 tiles after it.
     def shrink_start(self, n=1):
@@ -172,12 +166,11 @@ class ClueRun:
         if n <= 0:
             return
 
-        removed_start = self.starts.pop(0)
+        removed_run = self.remove_first()
 
-        while self.first_start() < removed_start + n:
-            self.starts.pop(0)
+        while self.first_start() < removed_run.start + n:
+            self.remove_first()
 
-        self.dirty = True
         self.apply()
 
     # Removes last_start and any other starts within n-1 tiles before it.
@@ -187,44 +180,39 @@ class ClueRun:
         if n <= 0:
             return
 
-        removed_start = self.starts.pop()
+        removed_run = self.remove_last()
 
-        while self.last_start() > removed_start - n:
-            self.starts.pop()
+        while self.last_start() > removed_run.start - n:
+            self.remove_last()
 
-        self.dirty = True
         self.apply()
 
     def solve_self(self):
         if self.is_fixed():
             return
 
-        for start in self.starts:
+        for potential_run in self.potential_runs:
             # SOLVE SELF 1)
             # Trim guaranteed overlap with adjacent ClueRuns:
             # Remove any start that comes before or adjacent to prev_run.first_end()
             # or any end that comes after or adjacent to next_run.last_start().
-            if self.prev_run is not None and start <= self.prev_run.first_end():
-                self.starts.remove(start)
-                self.dirty = True
+            if self.prev_run is not None and potential_run.start <= self.prev_run.first_end():
+                self.remove_run(potential_run)
                 continue
-            if self.next_run is not None and self.end(start) >= self.next_run.last_start():
-                self.starts.remove(start)
-                self.dirty = True
+            if self.next_run is not None and potential_run.end >= self.next_run.last_start():
+                self.remove_run(potential_run)
                 continue
 
             # SOLVE SELF 2)
             # Remove any potential run adjacent to a filled tile.
-            if self.run_too_long_with_start(start):
-                self.starts.remove(start)
-                self.dirty = True
+            if potential_run.next_to_filled():
+                self.remove_run(potential_run)
                 continue
 
             # SOLVE SELF 3)
             # Remove any potential run containing a cross.
-            if self.contains_cross_with_start(start):
-                self.starts.remove(start)
-                self.dirty = True
+            if potential_run.contains_cross():
+                self.remove_run(potential_run)
                 continue
 
         self.apply()
@@ -260,7 +248,7 @@ class ClueRun:
         first_partially_exclusive_filled = None
 
         for i in range(self.first_start(), self.last_end()):
-            if not is_filled(self.line, i):
+            if not self.line[i].is_filled():
                 continue
 
             run_end = find_end(self.line, i)
@@ -275,7 +263,7 @@ class ClueRun:
         last_partially_exclusive_filled = None
 
         for i in range(self.last_end() - 1, self.first_start() - 1, -1):
-            if not is_filled(self.line, i):
+            if not self.line[i].is_filled():
                 continue
 
             run_start = find_start_backward(self.line, i)
@@ -312,7 +300,7 @@ class ClueRun:
         # SOLVE SELF 5)
         # If a tile is fixed, other ClueRuns must end before or start after (with a gap).
         for i in range(self.first_start(), self.last_end()):
-            if not (self.must_contain(i) or self.is_exclusive(i) and is_filled(self.line, i)):
+            if not (self.must_contain(i) or self.is_exclusive(i) and self.line[i].is_filled()):
                 continue
 
             other_clue_run = self.prev_run
@@ -333,7 +321,7 @@ class ClueRun:
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
-            if self.last_start() > 0:
-                cross(self.line, self.last_start() - 1)
-            if self.first_end() < len(self.line):
-                cross(self.line, self.first_end())
+            if self.first_start() > 0:
+                cross(self.line, self.first_start() - 1)
+            if self.last_end() < len(self.line):
+                cross(self.line, self.last_end())
