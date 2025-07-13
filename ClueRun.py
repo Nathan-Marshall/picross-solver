@@ -1,3 +1,5 @@
+from line_profiler_pycharm import profile
+
 from helpers import *
 
 

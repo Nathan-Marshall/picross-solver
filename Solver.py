@@ -1,4 +1,5 @@
 import numpy as np
+from line_profiler_pycharm import profile
 
 from ClueRun import ClueRun
 from helpers import *
