@@ -69,10 +69,6 @@ class ClueRun:
         if run_end is None:
             run_end = run_start + 1
 
-        # Return false if this ClueRun can't contain this index
-        if not self.can_contain(run_start, run_end):
-            return False
-
         for start in self.starts:
             if not self.contains_with_start(start, run_start, run_end):
                 return False
