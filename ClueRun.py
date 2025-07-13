@@ -201,6 +201,7 @@ class ClueRun:
 
         for start in self.starts:
             # SOLVE SELF 1)
+            # Trim guaranteed overlap with adjacent ClueRuns:
             # Remove any start that comes before or adjacent to prev_run.first_end()
             # or any end that comes after or adjacent to next_run.last_start().
             if self.prev_run is not None and start <= self.prev_run.first_end():
@@ -213,14 +214,14 @@ class ClueRun:
                 continue
 
             # SOLVE SELF 2)
-            # Remove any start where the resulting run would be adjacent to another filled tile.
+            # Remove any potential run adjacent to a filled tile.
             if self.run_too_long_with_start(start):
                 self.starts.remove(start)
                 self.dirty = True
                 continue
 
             # SOLVE SELF 3)
-            # Remove any start where the resulting run would contain a cross.
+            # Remove any potential run containing a cross.
             if self.contains_cross_with_start(start):
                 self.starts.remove(start)
                 self.dirty = True
@@ -239,6 +240,16 @@ class ClueRun:
         #  - get the set of all starts from all ClueRuns that contain a given filled run
         #  - determine the tiles overlapped by all of the potential runs
         #  - can this replace regular rules for partially exclusive tiles?
+
+        # TODO:
+        #  I'm not sure if the above two TODOs still apply... I felt like no... but actually there might be a
+        #  difference between filling ALL tiles overlapped, and whatever we're doing. Most likely it CAN replace regular
+        #  partially exclusive rules.
+        #
+        # TODO:
+        #  Invert the relationship a bit, by having a Tile class, with an instance for each tile. Every start from every
+        #  ClueRun will register itself with the Tile, and the Tile can remove all its starts from their ClueRuns if it
+        #  gets crossed, or fill itself if exclusively owned.
 
         #########################################
 
@@ -299,7 +310,7 @@ class ClueRun:
         #########################################
 
         # SOLVE SELF 5)
-        # If a tile is fixed, other ClueRuns before must end before or start after (with a gap).
+        # If a tile is fixed, other ClueRuns must end before or start after (with a gap).
         for i in range(self.first_start(), self.last_end()):
             if not (self.must_contain(i) or self.is_exclusive(i) and is_filled(self.line, i)):
                 continue

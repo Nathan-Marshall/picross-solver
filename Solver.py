@@ -160,8 +160,8 @@ class Solver:
             if first_run is None:
                 continue
 
-            # # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
-            #  # speeds up the algorithm over this
+            # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
+            #  speeds up the algorithm over this
             # The first clue run that can contain this run must not start after the run does.
             n = first_run.last_end() - (start + first_run.length)
             first_run.shrink_end(n)
