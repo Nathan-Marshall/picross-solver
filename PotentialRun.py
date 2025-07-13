@@ -12,7 +12,7 @@ class PotentialRun:
 
     def remove_from_tiles(self):
         for tile in self.tiles():
-            tile.potential_runs.remove(self)
+            tile.remove_run(self)
 
     # True if the given run of tiles is entirely contained within this one.
     def contains(self, run_start, run_end=None):

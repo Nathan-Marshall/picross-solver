@@ -5,7 +5,8 @@ from helpers import *
 
 
 class ClueRun:
-    def __init__(self, line, prev_run, length, first_start, last_end):
+    def __init__(self, axis, line, prev_run, length, first_start, last_end):
+        self.axis = axis
         self.line = line
 
         self.prev_run = prev_run
@@ -18,7 +19,7 @@ class ClueRun:
 
         for potential_run in self.potential_runs:
             for tile in potential_run.tiles():
-                tile.potential_runs.append(potential_run)
+                tile.add_run(potential_run)
 
         self.dirty = False  # cleared every pass; if true, indicates that the run was modified this pass
 

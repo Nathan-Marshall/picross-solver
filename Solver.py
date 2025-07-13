@@ -85,17 +85,17 @@ class Solver:
             line_clues_raw = self.row_and_col_clues_raw[axis]
             for line_index, puzzle_line in enumerate(puzzle_view):
                 clue_run_lengths = line_clues_raw[line_index]
-                line_clues.append(self.init_line_clue(clue_run_lengths, puzzle_line))
+                line_clues.append(self.init_line_clue(axis, clue_run_lengths, puzzle_line))
 
     @staticmethod
-    def init_line_clue(clue_run_lengths, line):
+    def init_line_clue(axis, clue_run_lengths, line):
         line_clue = []
         deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
 
         run_start = 0
         clue_run = None
         for run_length in clue_run_lengths:
-            clue_run = ClueRun(line, clue_run, run_length, run_start, run_start + run_length + deduction)
+            clue_run = ClueRun(axis, line, clue_run, run_length, run_start, run_start + run_length + deduction)
             clue_run.apply()
             line_clue.append(clue_run)
             run_start += run_length + 1
@@ -111,9 +111,6 @@ class Solver:
         for clue_run in line_clue:
             # Any solving logic that does not require other clue runs
             clue_run.solve_self()
-
-        # Cross tiles that are not part of any ClueRuns
-        Solver.cross_unclaimed_tiles(puzzle_line, line_clue)
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
@@ -181,22 +178,6 @@ class Solver:
             # The last clue run that can contain this run must not end before the run does.
             n = (end - last_containing_clue_run.length) - last_containing_clue_run.first_start()
             last_containing_clue_run.shrink_start(n)
-
-    # If a tile is guaranteed not to be part of any run in the line, cross it out
-    @staticmethod
-    def cross_unclaimed_tiles(line, line_clue):
-        for i in range(len(line)):
-            if line[i].is_known():
-                continue
-
-            can_contain = False
-            for clue_run in line_clue:
-                if clue_run.can_contain(i):
-                    can_contain = True
-                    break
-
-            if not can_contain:
-                cross(line, i)
 
     def has_dirty_clue_runs(self):
         return any(clue_run.dirty

@@ -107,9 +107,9 @@ def draw_clue_run(ax, clue_run, line_index, run_index, num_runs, vertical):
                             color=clue_run.color, linestyle=linestyle)
 
     # Draw small arrows to indicate each potential start and end
-    for start in clue_run.starts:
-        plot_arrow(ax, vertical, False, start - 0.4, offset, clue_run.color)
-        plot_arrow(ax, vertical, True, (clue_run.end(start) - 1) + 0.4, offset, clue_run.color)
+    for potential_run in clue_run.potential_runs:
+        plot_arrow(ax, vertical, False, potential_run.start - 0.4, offset, clue_run.color)
+        plot_arrow(ax, vertical, True, (potential_run.end - 1) + 0.4, offset, clue_run.color)
 
     # Fill in the last start and first end arrows a little, to help indicate where the center known section is
     plot_with_axis_swap(ax, vertical,
