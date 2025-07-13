@@ -6,7 +6,6 @@ from Tile import Tile
 from helpers import *
 from picross_display import display_picross
 
-
 class Solver:
     def __init__(self, puzzle_raw, row_and_col_clues_raw):
         self.puzzle_raw = puzzle_raw

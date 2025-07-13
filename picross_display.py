@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
 
-
 def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_solve_callback=None):
     # Convert the puzzle to a numpy array
     puzzle_array = np.array(puzzle)
@@ -85,7 +84,6 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
     # Show the plot
     plt.show(block=block)
 
-
 def draw_clue_run(ax, clue_run, line_index, run_index, num_runs, vertical):
     if clue_run.is_fixed():
         return
@@ -121,7 +119,6 @@ def draw_clue_run(ax, clue_run, line_index, run_index, num_runs, vertical):
                         [offset - 0.1, offset + 0.1],
                         color=clue_run.color)
 
-
 def plot_with_axis_swap(ax, swap, *args, **kwargs):
     if swap:
         temp_list = list(args)
@@ -130,13 +127,11 @@ def plot_with_axis_swap(ax, swap, *args, **kwargs):
 
     ax.plot(*args, **kwargs)
 
-
 def plot_arrow(ax, vertical, flip, on_axis_offset, cross_axis_offset, color):
     plot_with_axis_swap(ax, vertical,
                         [on_axis_offset, on_axis_offset + (-0.1 if flip else 0.1), on_axis_offset],
                         [cross_axis_offset - 0.1, cross_axis_offset, cross_axis_offset + 0.1],
                         color=color)
-
 
 def block_until_windows_closed():
     plt.show()

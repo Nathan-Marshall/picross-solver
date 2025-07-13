@@ -7,9 +7,7 @@ from picross_display import display_picross, block_until_windows_closed
 from picross_import import picross_import
 from Solver import Solver
 
-
 all_puzzle_clues = picross_import('puzzles/Large.txt')
-
 
 def solve_main(i, display, display_steps=False):
     puzzle_clues_raw = all_puzzle_clues[i]
@@ -24,7 +22,6 @@ def solve_main(i, display, display_steps=False):
         display_picross(puzzle, solver.row_and_col_clues, name=puzzle_name, btn_solve_callback=solve_callback)
 
     return solver.verify()
-
 
 def solve_all_main(display_errors, puzzles_to_solve=range(len(all_puzzle_clues))):
     solved_count = 0
@@ -45,7 +42,6 @@ def solve_all_main(display_errors, puzzles_to_solve=range(len(all_puzzle_clues))
                 solve_main(i, True)
 
     print('solved:' + str(solved_count) + ', unsolved:' + str(unsolved_count) + ', time:' + str(time_elapsed))
-
 
 solve_all_main(True, range(30))
 # solve_main(16, True)

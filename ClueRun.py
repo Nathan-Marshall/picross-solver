@@ -3,7 +3,6 @@ from line_profiler_pycharm import profile
 from PotentialRun import PotentialRun
 from helpers import *
 
-
 class ClueRun:
     def __init__(self, axis, line, prev_run, length, first_start, last_end):
         self.axis = axis

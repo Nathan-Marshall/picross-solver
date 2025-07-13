@@ -1,6 +1,5 @@
 from helpers import *
 
-
 class Tile:
     def __init__(self, line_raw, index):
         self.line_raw = line_raw

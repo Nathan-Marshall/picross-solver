@@ -1,6 +1,3 @@
-
-
-
 class PotentialRun:
     def __init__(self, clue_run, start):
         self.clue_run = clue_run
