@@ -26,13 +26,13 @@ def solve_main(i, display, display_steps=False):
     return solver.verify()
 
 
-def solve_all_main(display_errors):
+def solve_all_main(display_errors, puzzles_to_solve=range(len(all_puzzle_clues))):
     solved_count = 0
     unsolved_count = 0
 
     time_elapsed = 0
 
-    for i in range(len(all_puzzle_clues)):
+    for i in puzzles_to_solve:
         start_time = time.time()
         solved = solve_main(i, False)
         time_elapsed += time.time() - start_time
@@ -47,5 +47,5 @@ def solve_all_main(display_errors):
     print('solved:' + str(solved_count) + ', unsolved:' + str(unsolved_count) + ', time:' + str(time_elapsed))
 
 
-solve_all_main(True)
+solve_all_main(True, range(30))
 # solve_main(16, True)
