@@ -28,20 +28,40 @@ class Solver:
                 for puzzle_view in puzzle_and_transpose(self.puzzle)
                 for puzzle_line in puzzle_view]
 
+    def enumerate_all_lines(self):
+        return [(axis, line_index, puzzle_line)
+                for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle))
+                for line_index, puzzle_line in enumerate(puzzle_view)]
+
     def get_all_line_clues(self):
         return [line_clue
                 for axis_clues in self.row_and_col_clues
                 for line_clue in axis_clues]
+
+    def enumerate_all_line_clues(self):
+        return [(axis, line_index, line_clue)
+                for axis, axis_clues in enumerate(self.row_and_col_clues)
+                for line_index, line_clue in enumerate(axis_clues)]
 
     def get_all_clue_runs(self):
         return [clue_run
                 for line_clue in self.get_all_line_clues()
                 for clue_run in line_clue]
 
+    def enumerate_all_clue_runs(self):
+        return [(axis, line_index, clue_index, clue_run)
+                for axis, line_index, line_clue in self.enumerate_all_line_clues()
+                for clue_index, clue_run in enumerate(line_clue)]
+
     def get_lines_and_clues(self):
         puzzle_lines = self.get_all_lines()
         line_clues = self.get_all_line_clues()
         return zip(puzzle_lines, line_clues)
+
+    def enumerate_lines_and_clues(self):
+        enumerated_puzzle_lines = self.enumerate_all_lines()
+        line_clues = self.get_all_line_clues()
+        return [enumerated_puzzle_line + (line_clue,) for enumerated_puzzle_line, line_clue in zip(enumerated_puzzle_lines, line_clues)]
 
     def get_all_line_clues_raw(self):
         return [line_clue_raw

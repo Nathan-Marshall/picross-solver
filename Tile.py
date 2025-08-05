@@ -13,7 +13,7 @@ class Tile:
         if self.is_state(state):
             return False
 
-        assert(self.is_state(UNKNOWN))
+        assert(self.is_state(State.UNKNOWN))
 
         self.line_raw[self.index] = state
 
@@ -23,22 +23,22 @@ class Tile:
         return self.get_state() == state
 
     def is_filled(self):
-        return self.get_state() == FILLED
+        return self.get_state() == State.FILLED
 
     def is_crossed(self):
-        return self.get_state() == CROSSED
+        return self.get_state() == State.CROSSED
 
     def is_unknown(self):
-        return self.get_state() == UNKNOWN
+        return self.get_state() == State.UNKNOWN
 
     def is_known(self):
         return not self.is_unknown()
 
     def fill(self):
-        self.set_state(FILLED)
+        return self.set_state(State.FILLED)
 
     def cross(self):
-        self.set_state(CROSSED)
+        return self.set_state(State.CROSSED)
 
     def add_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.axis]

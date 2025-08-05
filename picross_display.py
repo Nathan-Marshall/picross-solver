@@ -1,6 +1,7 @@
 import colorsys
 import random
 
+from helpers import State, Axis
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
@@ -8,6 +9,8 @@ from matplotlib.widgets import Button
 def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_solve_callback=None):
     # Convert the puzzle to a numpy array
     puzzle_array = np.array(puzzle)
+    num_rows = puzzle_array.shape[Axis.ROWS]
+    num_cols = puzzle_array.shape[Axis.COLS]
 
     # Create a figure and a set of subplots
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -22,18 +25,18 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
     ax.imshow(puzzle_array, cmap=cmap, norm=norm)
 
     # Draw grid lines
-    ax.set_xticks(np.arange(-.5, len(puzzle[0]), 1), minor=False)
-    ax.set_yticks(np.arange(-.5, len(puzzle), 1), minor=False)
+    ax.set_xticks(np.arange(-.5, num_cols, 1), minor=False)
+    ax.set_yticks(np.arange(-.5, num_rows, 1), minor=False)
     ax.grid(which='major', color='#444', linestyle='-', linewidth=2)
     ax.set_axisbelow(True)
 
-    ax.set_xticks(np.arange(-.5, len(puzzle[0]), 1), minor=True)
-    ax.set_yticks(np.arange(-.5, len(puzzle), 1), minor=True)
+    ax.set_xticks(np.arange(-.5, num_cols, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, num_rows, 1), minor=True)
     ax.grid(which='minor', color='#444', linestyle='-', linewidth=2)
     ax.set_axisbelow(True)
 
     # Add row clues
-    for i, clue in enumerate(row_and_col_clues[0]):
+    for i, clue in enumerate(row_and_col_clues[Axis.ROWS]):
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
@@ -44,7 +47,7 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
             ax.text(-1 - j / 2, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
 
     # Add column clues
-    for i, clue in enumerate(row_and_col_clues[1]):
+    for i, clue in enumerate(row_and_col_clues[Axis.COLS]):
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
@@ -56,11 +59,11 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
 
     # Draw an 'X' for each tile with an underlying value of -1
     cross_radius = 0.35
-    for i in range(len(puzzle)):
-        for j in range(len(puzzle[i])):
-            if puzzle[i][j] == -1:
-                ax.plot([j - cross_radius, j + cross_radius], [i - cross_radius, i + cross_radius], color='black')
-                ax.plot([j - cross_radius, j + cross_radius], [i + cross_radius, i - cross_radius], color='black')
+    for row in range(num_rows):
+        for col in range(num_cols):
+            if puzzle[row][col] == -1:
+                ax.plot([col - cross_radius, col + cross_radius], [row - cross_radius, row + cross_radius], color='black')
+                ax.plot([col - cross_radius, col + cross_radius], [row + cross_radius, row - cross_radius], color='black')
 
     # Draw each ClueRun overlay
     for axis in range(2):
