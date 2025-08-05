@@ -24,19 +24,16 @@ class ClueRun:
 
     def remove_run(self, potential_run):
         self.potential_runs.remove(potential_run)
-        potential_run.remove_from_tiles()
         self.dirty = True
         return potential_run.remove_from_tiles()
 
     def remove_first(self):
         first_run = self.potential_runs.pop(0)
-        first_run.remove_from_tiles()
         self.dirty = True
         return first_run.remove_from_tiles()
 
     def remove_last(self):
         last_run = self.potential_runs.pop()
-        last_run.remove_from_tiles()
         self.dirty = True
         return last_run.remove_from_tiles()
 
@@ -203,7 +200,10 @@ class ClueRun:
 
         return_val = False
 
-        for potential_run in self.potential_runs:
+        for potential_run in self.potential_runs[:]:
+            if potential_run not in self.potential_runs:
+                continue
+
             # SOLVE SELF 1)
             # Trim guaranteed overlap with adjacent ClueRuns:
             # Remove any start that comes before or adjacent to prev_run.first_end()

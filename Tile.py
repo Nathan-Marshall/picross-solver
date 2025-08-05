@@ -17,6 +17,21 @@ class Tile:
 
         self.line_raw[self.index] = state
 
+        if state == State.CROSSED:
+            modified_clue_runs = set()
+
+            for axis_runs in self.potential_runs:
+                for potential_run in axis_runs[:]:
+                    if potential_run not in potential_run.clue_run.potential_runs:
+                        continue
+                    potential_run.clue_run.remove_run(potential_run)
+                    modified_clue_runs.add(potential_run.clue_run)
+                    assert(potential_run not in axis_runs)
+            assert(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS])
+
+            for modified_clue_run in modified_clue_runs:
+                modified_clue_run.apply()
+
         return True
 
     def is_state(self, state):
@@ -47,5 +62,3 @@ class Tile:
     def remove_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.axis]
         axis_runs.remove(potential_run)
-        if not axis_runs:
-            self.cross()

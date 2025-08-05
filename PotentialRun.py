@@ -11,6 +11,16 @@ class PotentialRun:
         for tile in self.tiles():
             tile.remove_run(self)
 
+        return_val = False
+
+        for tile in self.tiles():
+            for axis_runs in tile.potential_runs:
+                if not axis_runs:
+                    return_val |= tile.cross()
+                    break
+
+        return return_val
+
     # True if the given run of tiles is entirely contained within this one.
     def contains(self, run_start, run_end=None):
         if run_end is None:
