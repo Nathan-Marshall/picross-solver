@@ -16,6 +16,9 @@ class PotentialRun(PotentialRunBase):
         self.start = start
         self.end = start + clue_run.length
 
+    def __str__(self):
+        return f"PotentialRun({potential_run_name(self.clue_run.axis, self.clue_run.line_index, self.clue_run.clue_index, self.start, self.end)})"
+
     def tiles(self):
         return self.clue_run.line[self.start:self.end]
 

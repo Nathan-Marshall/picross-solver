@@ -8,6 +8,9 @@ class Tile:
         self.col_index = col_index
         self.potential_runs = [[], []]
 
+    def __str__(self):
+        return f"Tile(R{self.row_index}, C{self.col_index})"
+
     def get_state(self):
         return self.line_raw[self.col_index]
 

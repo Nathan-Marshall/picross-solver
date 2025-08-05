@@ -34,6 +34,9 @@ class ClueRun(ClueRunBase):
 
         self.dirty = False  # cleared every pass; if true, indicates that the run was modified this pass
 
+    def __str__(self):
+        return f"ClueRun({clue_run_name(self.axis, self.line_index, self.clue_index)})"
+
     def remove_run(self, potential_run):
         self.potential_runs.remove(potential_run)
         self.dirty = True

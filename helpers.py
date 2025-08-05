@@ -7,6 +7,47 @@ class Axis:
     ROWS = 0
     COLS = 1
 
+def axis_name(axis):
+    return "cols" if axis else "rows"
+
+def axis_initial(axis):
+    return "C" if axis else "R"
+
+def line_name(axis, line_index):
+    return f"{axis_initial(axis)}{line_index}"
+
+def run_name(axis, line_index, start, end):
+    return f"{line_name(axis, line_index)} {start}-{end-1}"
+
+def tile_name(axis, line_index, tile_index):
+    return f"{line_name(axis, line_index)} {tile_index}"
+
+def clue_run_name(axis, line_index, clue_index):
+    return f"{line_name(axis, line_index)}:{clue_index}"
+
+def potential_run_name(axis, line_index, clue_index, start, end):
+    return f"{clue_run_name(axis, line_index, clue_index)}@{start}-{end-1}"
+
+def state_name(state):
+    match state:
+        case State.CROSSED:
+            return "crossed"
+        case State.UNKNOWN:
+            return "unknown"
+        case State.FILLED:
+            return "filled"
+    return str(state)
+
+def state_name_verb(state):
+    match state:
+        case State.CROSSED:
+            return "cross"
+        case State.UNKNOWN:
+            return "clear"
+        case State.FILLED:
+            return "fill"
+    return str(state)
+
 def puzzle_and_transpose(puzzle):
     return [puzzle, puzzle.transpose()]
 
