@@ -4,8 +4,11 @@ from PotentialRun import PotentialRun
 from helpers import *
 
 class ClueRun:
-    def __init__(self, axis, line, prev_run, length, first_start, last_end):
+    def __init__(self, solver, axis, line_index, clue_index, line, prev_run, length, first_start, last_end):
+        self.solver = solver
         self.axis = axis
+        self.line_index = line_index
+        self.clue_index = clue_index
         self.line = line
 
         self.prev_run = prev_run
@@ -155,6 +158,26 @@ class ClueRun:
     # True if there is only one potential run
     def is_fixed(self):
         return len(self.potential_runs) == 1
+
+    def remove_starts_after(self, start):
+        return_val = False
+
+        while self.last_start() > start:
+            return_val |= self.remove_last()
+
+        return_val |= self.apply()
+
+        return return_val
+
+    def remove_ends_before(self, end):
+        return_val = False
+
+        while self.first_end() < end:
+            return_val |= self.remove_first()
+
+        return_val |= self.apply()
+
+        return return_val
 
     # Removes first_start and any other starts within n-1 tiles after it.
     def shrink_start(self, n=1):

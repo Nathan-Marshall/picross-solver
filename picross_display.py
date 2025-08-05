@@ -6,15 +6,18 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
 
-def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_solve_callback=None):
+def display_picross(solver, title=None, block=True, btn_solve_callback=None):
+    if not title:
+        title = solver.puzzle_name
+
     # Convert the puzzle to a numpy array
-    puzzle_array = np.array(puzzle)
+    puzzle_array = np.array(solver.puzzle_raw)
     num_rows = puzzle_array.shape[Axis.ROWS]
     num_cols = puzzle_array.shape[Axis.COLS]
 
     # Create a figure and a set of subplots
     fig, ax = plt.subplots(figsize=(6, 6))
-    fig.canvas.manager.set_window_title(name)
+    fig.canvas.manager.set_window_title(title)
     fig.set_facecolor('black')
 
     # Display the puzzle as an image
@@ -36,7 +39,7 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
     ax.set_axisbelow(True)
 
     # Add row clues
-    for i, clue in enumerate(row_and_col_clues[Axis.ROWS]):
+    for i, clue in enumerate(solver.row_and_col_clues[Axis.ROWS]):
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
@@ -47,7 +50,7 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
             ax.text(-1 - j / 2, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
 
     # Add column clues
-    for i, clue in enumerate(row_and_col_clues[Axis.COLS]):
+    for i, clue in enumerate(solver.row_and_col_clues[Axis.COLS]):
         first_hue = random.random()
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
@@ -61,15 +64,14 @@ def display_picross(puzzle, row_and_col_clues, name='Puzzle', block=True, btn_so
     cross_radius = 0.35
     for row in range(num_rows):
         for col in range(num_cols):
-            if puzzle[row][col] == -1:
+            if solver.puzzle_raw[row][col] == -1:
                 ax.plot([col - cross_radius, col + cross_radius], [row - cross_radius, row + cross_radius], color='black')
                 ax.plot([col - cross_radius, col + cross_radius], [row + cross_radius, row - cross_radius], color='black')
 
     # Draw each ClueRun overlay
-    for axis in range(2):
-        for i, clue in enumerate(row_and_col_clues[axis]):
-            for j, clue_run in enumerate(clue):
-                draw_clue_run(ax, clue_run, i, j, len(clue), axis)
+    for axis, line_index, line_clue in solver.enumerate_all_line_clues():
+        for clue_index, clue_run in enumerate(line_clue):
+            draw_clue_run(ax, clue_run, line_index, clue_index, len(line_clue), axis)
 
     # Hide the x and y axis labels and ticks
     ax.set_xticklabels([])

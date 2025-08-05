@@ -1,13 +1,15 @@
 from helpers import *
 
 class Tile:
-    def __init__(self, line_raw, index):
+    def __init__(self, solver, row_index, line_raw, col_index):
+        self.solver = solver
+        self.row_index = row_index
         self.line_raw = line_raw
-        self.index = index
+        self.col_index = col_index
         self.potential_runs = [[], []]
 
     def get_state(self):
-        return self.line_raw[self.index]
+        return self.line_raw[self.col_index]
 
     def set_state(self, state):
         if self.is_state(state):
@@ -15,7 +17,7 @@ class Tile:
 
         assert(self.is_state(State.UNKNOWN))
 
-        self.line_raw[self.index] = state
+        self.line_raw[self.col_index] = state
 
         if state == State.CROSSED:
             modified_clue_runs = set()

@@ -9,17 +9,17 @@ from picross_display import display_picross
 class Solver:
     def __init__(self, puzzle_raw, row_and_col_clues_raw):
         self.puzzle_raw = puzzle_raw
-        self.puzzle = Solver.init_tiles(puzzle_raw)
+        self.puzzle = self.init_tiles(puzzle_raw)
         self.row_and_col_clues_raw = row_and_col_clues_raw
         self.row_and_col_clues = [[], []]
+        self.display_steps = display_steps
 
-    @staticmethod
-    def init_tiles(puzzle_raw):
+    def init_tiles(self, puzzle_raw):
         puzzle_arr = []
-        for line_raw in puzzle_raw:
+        for line_index, line_raw in enumerate(puzzle_raw):
             line = []
             for i in range(len(line_raw)):
-                line.append(Tile(line_raw, i))
+                line.append(Tile(self, line_index, line_raw, i))
             puzzle_arr.append(line)
         return np.array(puzzle_arr, Tile)
 
@@ -83,7 +83,8 @@ class Solver:
         lengths = [length for _, _, length in runs]
         return lengths == clue_run_lengths
 
-    def solve(self, display_steps=False):
+    def solve(self):
+        self.initialize_clue_runs()
         self.initial_solving_pass()
 
         tiles_changed = True
@@ -94,24 +95,27 @@ class Solver:
             if display_steps:
                 display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
 
-    def initial_solving_pass(self):
+    def initialize_clue_runs(self):
         for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle)):
             line_clues = self.row_and_col_clues[axis]
             line_clues_raw = self.row_and_col_clues_raw[axis]
             for line_index, puzzle_line in enumerate(puzzle_view):
                 clue_run_lengths = line_clues_raw[line_index]
-                line_clues.append(self.init_line_clue(axis, clue_run_lengths, puzzle_line))
+                line_clue = []
+                line_clues.append(line_clue)
+                self.init_line_clue(line_clue, axis, line_index, clue_run_lengths, puzzle_line)
 
-    @staticmethod
-    def init_line_clue(axis, clue_run_lengths, line):
-        line_clue = []
+    def initial_solving_pass(self):
+        for clue_run in self.get_all_clue_runs():
+            self.display_changes(clue_run.apply, f"Initialize {clue_run}")
+
+    def init_line_clue(self, line_clue, axis, line_index, clue_run_lengths, line):
         deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
 
         run_start = 0
         clue_run = None
-        for run_length in clue_run_lengths:
-            clue_run = ClueRun(axis, line, clue_run, run_length, run_start, run_start + run_length + deduction)
-            clue_run.apply()
+        for clue_index, run_length in enumerate(clue_run_lengths):
+            clue_run = ClueRun(self, axis, line_index, clue_index, line, clue_run, run_length, run_start, run_start + run_length + deduction)
             line_clue.append(clue_run)
             run_start += run_length + 1
 
@@ -120,15 +124,15 @@ class Solver:
     def solving_pass(self):
         return_val = False
 
-        for puzzle_line, line_clue in self.get_lines_and_clues():
-            return_val |= self.solve_line(puzzle_line, line_clue)
+        for axis, line_index, puzzle_line, line_clue in self.enumerate_lines_and_clues():
+            return_val |= self.solve_line(axis, line_index, puzzle_line, line_clue)
 
         return return_val
 
-    def solve_line(self, puzzle_line, line_clue):
+    def solve_line(self, axis, line_index, puzzle_line, line_clue):
         return_val = False
 
-        for clue_run in enumerate(line_clue):
+        for clue_index, clue_run in enumerate(line_clue):
             # Any solving logic that does not require other clue runs
             return_val |= clue_run.solve_self()
 
@@ -192,12 +196,10 @@ class Solver:
             # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
             #  speeds up the algorithm over this
             # The first clue run that can contain this run must not start after the run does.
-            n = first_containing_clue_run.last_end() - (start + first_containing_clue_run.length)
-            return_val |= first_containing_clue_run.shrink_end(n)
+            #return_val |= self.display_changes(partial(first_containing_clue_run.remove_starts_after, start), f"{first_containing_clue_run} first to contain {run_name(axis, line_index, start, end)} so last_start={start}")
 
             # The last clue run that can contain this run must not end before the run does.
-            n = (end - last_containing_clue_run.length) - last_containing_clue_run.first_start()
-            return_val |= last_containing_clue_run.shrink_start(n)
+            #return_val |= self.display_changes(partial(last_containing_clue_run.remove_ends_before, end), f"{last_containing_clue_run} last to contain {run_name(axis, line_index, start, end)} so first_end={end}")
 
         return return_val
 
