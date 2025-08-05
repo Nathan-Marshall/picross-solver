@@ -135,12 +135,13 @@ def draw_clue_run(ax, clue_run, line_index, run_index, num_runs, vertical):
             continue
 
         linestyle = 'solid' if clue_run.must_contain(i) else 'dashed'
+        linewidth = 2 if clue_run.must_contain(i) else 1
         line_start = i - 0.3 if not clue_run.can_contain(i-1) or clue_run.length == 1 else i - 0.5
         line_end = i + 0.3 if not clue_run.can_contain(i+1) or clue_run.length == 1 else i + 0.5
         plot_with_axis_swap(ax, vertical,
                             [line_start, line_end],
                             [offset, offset],
-                            color=clue_run.color, linestyle=linestyle)
+                            color=clue_run.color, linestyle=linestyle, linewidth=linewidth)
 
     # Draw small arrows to indicate each potential start and end
     for potential_run in clue_run.potential_runs:
