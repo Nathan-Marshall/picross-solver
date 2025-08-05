@@ -18,7 +18,10 @@ class Tile:
         if self.is_state(state):
             return False
 
-        assert(self.is_state(State.UNKNOWN))
+        # Uncomment and modify this line to display and break on a specific tile
+        # self.solver.assert_puzzle(self.row_index != 8 or self.col_index != 18, f"{state_name_verb(state).capitalize()}ing {self}")
+
+        self.solver.assert_puzzle(self.is_unknown(), f"Tried to {state_name_verb(state)} {self} but it's already {state_name(self.get_state())}")
 
         self.line_raw[self.col_index] = state
 
@@ -31,8 +34,8 @@ class Tile:
                         continue
                     potential_run.clue_run.remove_run(potential_run)
                     modified_clue_runs.add(potential_run.clue_run)
-                    assert(potential_run not in axis_runs)
-            assert(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS])
+                    self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {self}")
+            self.solver.assert_puzzle(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS], f"Failed to clear all potential runs from {self}")
 
             for modified_clue_run in modified_clue_runs:
                 modified_clue_run.apply()

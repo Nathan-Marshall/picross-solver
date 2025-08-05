@@ -53,7 +53,7 @@ class ClueRun(ClueRunBase):
         return last_run.remove_from_tiles()
 
     def assert_valid(self):
-        assert len(self.potential_runs) > 0
+        self.solver.assert_puzzle(len(self.potential_runs) > 0, f"{self} has no potential runs.")
 
     # Index of the first potential run
     def first_start(self):
@@ -193,7 +193,7 @@ class ClueRun(ClueRunBase):
 
     # Removes first_start and any other starts within n-1 tiles after it.
     def shrink_start(self, n=1):
-        assert n <= self.last_start() - self.first_start()
+        self.solver.assert_puzzle(n <= self.last_start() - self.first_start(), f"{self} attempted to shrink start more than possible.")
 
         if n <= 0:
             return False
@@ -212,7 +212,7 @@ class ClueRun(ClueRunBase):
 
     # Removes last_start and any other starts within n-1 tiles before it.
     def shrink_end(self, n=1):
-        assert n <= self.last_start() - self.first_start()
+        self.solver.assert_puzzle(n <= self.last_start() - self.first_start(), f"{self} attempted to shrink end more than possible.")
 
         if n <= 0:
             return False

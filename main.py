@@ -14,7 +14,7 @@ def solve_main(i, display, display_steps=False, display_steps_on_callback=False)
     puzzle_name = f"Puzzle {i}"
 
     puzzle = np.zeros((len(puzzle_clues_raw[0]), len(puzzle_clues_raw[1])), dtype=int)
-    solver = Solver(puzzle_name, puzzle, puzzle_clues_raw, display_steps=display_steps)
+    solver = Solver(puzzle_name, puzzle, puzzle_clues_raw, track_changes=display, display_steps=display_steps)
 
     try:
         solver.solve()
@@ -49,5 +49,6 @@ def solve_all_main(display_errors, puzzles_to_solve=range(len(all_puzzle_clues))
 
     print(f"solved:{solved_count}, unsolved:{unsolved_count}, time:{time_elapsed}")
 
-solve_all_main(True, range(30))
+# solve_all_main(True, range(30))
+solve_all_main(False)
 # solve_main(16, True)

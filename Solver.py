@@ -1,6 +1,10 @@
+import copy
+from functools import partial
+
 import numpy as np
 from line_profiler_pycharm import profile
 
+import picross_display
 from ClueRun import ClueRunBase, ClueRun
 from Tile import Tile
 from helpers import *
@@ -22,6 +26,11 @@ class SolverBase:
     #         for axis_clues in other.row_and_col_clues
     #     ]
 
+# class DebugStackFrame:
+#     def __init__(self, title):
+#         self.title = title
+#         self.modified = False  # True if the board has been modified since this frame's initial state was saved
+
 class Solver(SolverBase):
     def __init__(self, puzzle_name, puzzle_raw, row_and_col_clues_raw, track_changes, display_steps):
         super().__init__()
@@ -31,7 +40,22 @@ class Solver(SolverBase):
         self.puzzle = self.init_tiles(puzzle_raw)
         self.row_and_col_clues_raw = row_and_col_clues_raw
         self.row_and_col_clues = [[], []]
+        # self.track_changes = track_changes
         self.display_steps = display_steps
+
+        # self.debug_stack = []
+        # self.saved_state = None
+        # self.saved_state_title = ""
+
+    def assert_puzzle(self, result, message):
+        if result:
+            return
+
+        # if self.saved_state:
+        #     display_picross(self.saved_state, title=self.saved_state_title, block=False)
+
+        display_picross(self, title=f"{self.puzzle_name} assert: {message}")
+        print(f"{self.puzzle_name} assert: {message}")
 
     def init_tiles(self, puzzle_raw):
         puzzle_arr = []
@@ -96,6 +120,24 @@ class Solver(SolverBase):
         return all(self.verify_line(puzzle_line, clue_run_lengths)
                    for puzzle_line, clue_run_lengths in self.get_lines_and_clues_raw())
 
+    # TODO:
+    #  I should get rid of this function and just do if-else, since the string concatenation is slowing things down
+    #  when not changing tiles or displaying steps
+    def display_changes(self, operation, description):
+        tiles_changed = operation()
+
+        if tiles_changed:
+            title = f"{self.puzzle_name} - After {description}"
+
+            if self.display_steps:
+                display_picross(self, title=title)
+
+            # if self.track_changes:
+            #     self.saved_state = SolverBase(self)
+            #     self.saved_state_title = title
+
+        return tiles_changed
+
     @staticmethod
     def verify_line(puzzle_line, clue_run_lengths):
         runs = get_run_starts_ends_lengths(puzzle_line)
@@ -104,15 +146,12 @@ class Solver(SolverBase):
 
     def solve(self):
         self.initialize_clue_runs()
-        self.initial_solving_pass()
+        self.display_changes(self.initial_solving_pass, "Initial pass")
 
         tiles_changed = True
         while tiles_changed or self.has_dirty_clue_runs():
             self.clean_all_clue_runs()
-            tiles_changed = self.solving_pass()
-
-            if display_steps:
-                display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
+            tiles_changed = self.display_changes(self.solving_pass, "Solving pass")
 
     def initialize_clue_runs(self):
         for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle)):
@@ -144,7 +183,7 @@ class Solver(SolverBase):
         return_val = False
 
         for axis, line_index, puzzle_line, line_clue in self.enumerate_lines_and_clues():
-            return_val |= self.solve_line(axis, line_index, puzzle_line, line_clue)
+            return_val |= self.display_changes(partial(self.solve_line, axis, line_index, puzzle_line, line_clue), f"Solve line {line_name(axis, line_index)}")
 
         return return_val
 
@@ -153,7 +192,7 @@ class Solver(SolverBase):
 
         for clue_index, clue_run in enumerate(line_clue):
             # Any solving logic that does not require other clue runs
-            return_val |= clue_run.solve_self()
+            return_val |= self.display_changes(clue_run.solve_self, f"Solve {clue_run}")
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
@@ -200,14 +239,14 @@ class Solver(SolverBase):
 
             if guaranteed_run_start is not None:
                 # Fill guaranteed run
-                return_val |= fill(puzzle_line, guaranteed_run_start, guaranteed_run_end)
+                return_val |= self.display_changes(partial(fill, puzzle_line, guaranteed_run_start, guaranteed_run_end), f"Fill guaranteed run {run_name(axis, line_index, guaranteed_run_start, guaranteed_run_end)}")
 
                 # If filled run is same length as all runs that can contain it, cross extremities
                 if guaranteed_length is not None and guaranteed_length > 0:
                     if guaranteed_run_start > 0:
-                        return_val |= cross(puzzle_line, guaranteed_run_start - 1)
+                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_start - 1), f"Cross guaranteed start {tile_name(axis, line_index, guaranteed_run_start)}")
                     if guaranteed_run_end < len(puzzle_line):
-                        return_val |= cross(puzzle_line, guaranteed_run_end)
+                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_end), f"Cross guaranteed end {tile_name(axis, line_index, guaranteed_run_end)}")
 
             if first_containing_clue_run is None:
                 continue
