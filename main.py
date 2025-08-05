@@ -16,6 +16,11 @@ def solve_main(i, display, display_steps=False, display_steps_on_callback=False)
     puzzle = np.zeros((len(puzzle_clues_raw[0]), len(puzzle_clues_raw[1])), dtype=int)
     solver = Solver(puzzle_name, puzzle, puzzle_clues_raw, display_steps=display_steps)
 
+    try:
+        solver.solve()
+    except Exception as e:
+        print(f"{e} occurred in Puzzle {i}")
+
     if display:
         solve_callback = partial(solve_main, i, display, display_steps=display_steps_on_callback, display_steps_on_callback=display_steps_on_callback)
         display_picross(solver, btn_solve_callback=solve_callback)
