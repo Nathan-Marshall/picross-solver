@@ -10,7 +10,17 @@ class Tile:
         return self.line_raw[self.index]
 
     def set_state(self, state):
+        if self.is_state(state):
+            return False
+
+        assert(self.is_state(UNKNOWN))
+
         self.line_raw[self.index] = state
+
+        return True
+
+    def is_state(self, state):
+        return self.get_state() == state
 
     def is_filled(self):
         return self.get_state() == FILLED

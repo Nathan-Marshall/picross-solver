@@ -66,14 +66,10 @@ class Solver:
     def solve(self, display_steps=False):
         self.initial_solving_pass()
 
-        if display_steps:
-            display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
-
-        puzzle_raw_copy = np.array((0, 0))
-        while not np.array_equal(self.puzzle_raw, puzzle_raw_copy) or self.has_dirty_clue_runs():
-            puzzle_raw_copy = self.puzzle_raw.copy()
+        tiles_changed = True
+        while tiles_changed or self.has_dirty_clue_runs():
             self.clean_all_clue_runs()
-            self.solving_pass()
+            tiles_changed = self.solving_pass()
 
             if display_steps:
                 display_picross(self.puzzle_raw, self.row_and_col_clues, block=False)
@@ -102,14 +98,19 @@ class Solver:
         return line_clue
 
     def solving_pass(self):
-        for puzzle_line, line_clue in self.get_lines_and_clues():
-            self.solve_line(puzzle_line, line_clue)
+        return_val = False
 
-    @staticmethod
-    def solve_line(puzzle_line, line_clue):
-        for clue_run in line_clue:
+        for puzzle_line, line_clue in self.get_lines_and_clues():
+            return_val |= self.solve_line(puzzle_line, line_clue)
+
+        return return_val
+
+    def solve_line(self, puzzle_line, line_clue):
+        return_val = False
+
+        for clue_run in enumerate(line_clue):
             # Any solving logic that does not require other clue runs
-            clue_run.solve_self()
+            return_val |= clue_run.solve_self()
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
@@ -156,14 +157,14 @@ class Solver:
 
             if guaranteed_run_start is not None:
                 # Fill guaranteed run
-                fill(puzzle_line, guaranteed_run_start, guaranteed_run_end)
+                return_val |= fill(puzzle_line, guaranteed_run_start, guaranteed_run_end)
 
                 # If filled run is same length as all runs that can contain it, cross extremities
                 if guaranteed_length is not None and guaranteed_length > 0:
                     if guaranteed_run_start > 0:
-                        cross(puzzle_line, guaranteed_run_start - 1)
+                        return_val |= cross(puzzle_line, guaranteed_run_start - 1)
                     if guaranteed_run_end < len(puzzle_line):
-                        cross(puzzle_line, guaranteed_run_end)
+                        return_val |= cross(puzzle_line, guaranteed_run_end)
 
             if first_containing_clue_run is None:
                 continue
@@ -172,11 +173,13 @@ class Solver:
             #  speeds up the algorithm over this
             # The first clue run that can contain this run must not start after the run does.
             n = first_containing_clue_run.last_end() - (start + first_containing_clue_run.length)
-            first_containing_clue_run.shrink_end(n)
+            return_val |= first_containing_clue_run.shrink_end(n)
 
             # The last clue run that can contain this run must not end before the run does.
             n = (end - last_containing_clue_run.length) - last_containing_clue_run.first_start()
-            last_containing_clue_run.shrink_start(n)
+            return_val |= last_containing_clue_run.shrink_start(n)
+
+        return return_val
 
     def has_dirty_clue_runs(self):
         return any(clue_run.dirty

@@ -26,19 +26,19 @@ class ClueRun:
         self.potential_runs.remove(potential_run)
         potential_run.remove_from_tiles()
         self.dirty = True
-        return potential_run
+        return potential_run.remove_from_tiles()
 
     def remove_first(self):
         first_run = self.potential_runs.pop(0)
         first_run.remove_from_tiles()
         self.dirty = True
-        return first_run
+        return first_run.remove_from_tiles()
 
     def remove_last(self):
         last_run = self.potential_runs.pop()
         last_run.remove_from_tiles()
         self.dirty = True
-        return last_run
+        return last_run.remove_from_tiles()
 
     def assert_valid(self):
         assert len(self.potential_runs) > 0
@@ -164,32 +164,44 @@ class ClueRun:
         assert n <= self.last_start() - self.first_start()
 
         if n <= 0:
-            return
+            return False
 
-        removed_run = self.remove_first()
+        return_val = False
 
-        while self.first_start() < removed_run.start + n:
-            self.remove_first()
+        removed_start = self.first_start()
+        return_val |= self.remove_first()
 
-        self.apply()
+        while self.first_start() < removed_start + n:
+            return_val |= self.remove_first()
+
+        return_val |= self.apply()
+
+        return return_val
 
     # Removes last_start and any other starts within n-1 tiles before it.
     def shrink_end(self, n=1):
         assert n <= self.last_start() - self.first_start()
 
         if n <= 0:
-            return
+            return False
 
-        removed_run = self.remove_last()
+        return_val = False
 
-        while self.last_start() > removed_run.start - n:
-            self.remove_last()
+        removed_start = self.last_start()
+        return_val |= self.remove_last()
 
-        self.apply()
+        while self.last_start() > removed_start - n:
+            return_val |= self.remove_last()
+
+        return_val |= self.apply()
+
+        return return_val
 
     def solve_self(self):
         if self.is_fixed():
-            return
+            return False
+
+        return_val = False
 
         for potential_run in self.potential_runs:
             # SOLVE SELF 1)
@@ -197,27 +209,27 @@ class ClueRun:
             # Remove any start that comes before or adjacent to prev_run.first_end()
             # or any end that comes after or adjacent to next_run.last_start().
             if self.prev_run is not None and potential_run.start <= self.prev_run.first_end():
-                self.remove_run(potential_run)
+                return_val |= self.remove_run(potential_run)
                 continue
             if self.next_run is not None and potential_run.end >= self.next_run.last_start():
-                self.remove_run(potential_run)
+                return_val |= self.remove_run(potential_run)
                 continue
 
             # SOLVE SELF 2)
             # Remove any potential run adjacent to a filled tile.
             if potential_run.next_to_filled():
-                self.remove_run(potential_run)
+                return_val |= self.remove_run(potential_run)
                 continue
 
             # SOLVE SELF 3)
             # Remove any potential run containing a cross.
             if potential_run.contains_cross():
-                self.remove_run(potential_run)
+                return_val |= self.remove_run(potential_run)
                 continue
 
-        self.apply()
+        return_val |= self.apply()
         if self.is_fixed():
-            return
+            return return_val
 
         # TODO:
         #  move this out of solve_self. Instead, iterate through each filled run, and check for the set of all clues
@@ -277,23 +289,23 @@ class ClueRun:
         if first_partially_exclusive_filled is not None:
             # Must not start after the first filled tile which cannot be shared by a prior ClueRun.
             n = self.last_end() - (first_partially_exclusive_filled + self.length)
-            self.shrink_end(n)
+            return_val |= self.shrink_end(n)
 
         if last_partially_exclusive_filled is not None:
             # Must not end before the last filled tile which cannot be shared by a later ClueRun.
             n = (last_partially_exclusive_filled + 1 - self.length) - self.first_start()
-            self.shrink_start(n)
+            return_val |= self.shrink_start(n)
 
         self.assert_valid()
 
         if first_partially_exclusive_filled is not None and last_partially_exclusive_filled is not None:
             # Fill all tiles between first_exclusive_filled and last_exclusive_filled
             for i in range(first_partially_exclusive_filled, last_partially_exclusive_filled + 1):
-                fill(self.line, i)
+                return_val |= fill(self.line, i)
 
-        self.apply()
+        return_val |= self.apply()
         if self.is_fixed():
-            return
+            return return_val
 
         #########################################
 
@@ -305,23 +317,30 @@ class ClueRun:
 
             other_clue_run = self.prev_run
             while other_clue_run is not None:
-                other_clue_run.shrink_end(other_clue_run.last_end() - 1 - i + 2)
+                return_val |= other_clue_run.shrink_end(other_clue_run.last_end() - 1 - i + 2)
                 other_clue_run = other_clue_run.prev_run
 
             other_clue_run = self.next_run
             while other_clue_run is not None:
-                other_clue_run.shrink_start(i - other_clue_run.first_start() + 2)
+                return_val |= other_clue_run.shrink_start(i - other_clue_run.first_start() + 2)
                 other_clue_run = other_clue_run.next_run
+
+        return_val |= self.apply()
+        return return_val
 
     # Apply known tiles to the board
     def apply(self):
+        return_val = False
+
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
-            fill(self.line, i)
+            return_val |= fill(self.line, i)
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
             if self.first_start() > 0:
-                cross(self.line, self.first_start() - 1)
+                return_val |= cross(self.line, self.first_start() - 1)
             if self.last_end() < len(self.line):
-                cross(self.line, self.last_end())
+                return_val |= cross(self.line, self.last_end())
+
+        return return_val

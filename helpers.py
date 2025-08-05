@@ -5,29 +5,22 @@ FILLED = 1
 def puzzle_and_transpose(puzzle):
     return [puzzle, puzzle.transpose()]
 
-def fill(line, start, end=None):
+def set_state(state, line, start, end=None):
     if end is None:
         end = start + 1
 
+    return_val = False
+
     for tile in line[start:end]:
-        if tile.is_filled():
-            continue
+        return_val |= tile.set_state(state)
 
-        assert not tile.is_crossed()
+    return return_val
 
-        tile.fill()
+def fill(line, start, end=None):
+    return set_state(State.FILLED, line, start, end)
 
 def cross(line, start, end=None):
-    if end is None:
-        end = start + 1
-
-    for tile in line[start:end]:
-        if tile.is_crossed():
-            continue
-
-        assert not tile.is_filled()
-
-        tile.cross()
+    return set_state(State.CROSSED, line, start, end)
 
 # Find the index of the next tile with the given state
 def find_next_start(line, i, state=FILLED):
