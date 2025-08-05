@@ -1,5 +1,17 @@
-class PotentialRun:
+from helpers import *
+
+class PotentialRunBase:
+    def __init__(self):
+        pass
+
+    # def __init__(self, other):
+    #     self.start = other.start
+    #     self.end = other.end
+
+class PotentialRun(PotentialRunBase):
     def __init__(self, clue_run, start):
+        super().__init__()
+
         self.clue_run = clue_run
         self.start = start
         self.end = start + clue_run.length

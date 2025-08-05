@@ -1,13 +1,32 @@
 import numpy as np
 from line_profiler_pycharm import profile
 
-from ClueRun import ClueRun
+from ClueRun import ClueRunBase, ClueRun
 from Tile import Tile
 from helpers import *
 from picross_display import display_picross
 
-class Solver:
-    def __init__(self, puzzle_raw, row_and_col_clues_raw):
+class SolverBase:
+    def __init__(self):
+        pass
+
+    # def __init__(self, other):
+    #     self.puzzle_name = other.puzzle_name
+    #     self.puzzle_raw = copy.deepcopy(other.puzzle_raw)
+    #     self.row_and_col_clues_raw = other.row_and_col_clues_raw
+    #     self.row_and_col_clues = [
+    #         [
+    #             [ClueRunBase(clue_run) for clue_run in line_clue]
+    #             for line_clue in axis_clues
+    #         ]
+    #         for axis_clues in other.row_and_col_clues
+    #     ]
+
+class Solver(SolverBase):
+    def __init__(self, puzzle_name, puzzle_raw, row_and_col_clues_raw, track_changes, display_steps):
+        super().__init__()
+
+        self.puzzle_name = puzzle_name
         self.puzzle_raw = puzzle_raw
         self.puzzle = self.init_tiles(puzzle_raw)
         self.row_and_col_clues_raw = row_and_col_clues_raw

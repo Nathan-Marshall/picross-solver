@@ -1,10 +1,19 @@
 from line_profiler_pycharm import profile
 
-from PotentialRun import PotentialRun
+from PotentialRun import PotentialRunBase, PotentialRun
 from helpers import *
 
-class ClueRun:
+class ClueRunBase:
+    def __init__(self):
+        pass
+
+    # def __init__(self, other):
+    #     self.potential_runs = [PotentialRunBase(potential_run) for potential_run in other.potential_runs]
+
+class ClueRun(ClueRunBase):
     def __init__(self, solver, axis, line_index, clue_index, line, prev_run, length, first_start, last_end):
+        super().__init__()
+
         self.solver = solver
         self.axis = axis
         self.line_index = line_index
