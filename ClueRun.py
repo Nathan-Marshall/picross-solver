@@ -280,11 +280,6 @@ class ClueRun(ClueRunBase):
         #  I'm not sure if the above two TODOs still apply... I felt like no... but actually there might be a
         #  difference between filling ALL tiles overlapped, and whatever we're doing. Most likely it CAN replace regular
         #  partially exclusive rules.
-        #
-        # TODO:
-        #  Invert the relationship a bit, by having a Tile class, with an instance for each tile. Every start from every
-        #  ClueRun will register itself with the Tile, and the Tile can remove all its starts from their ClueRuns if it
-        #  gets crossed, or fill itself if exclusively owned.
 
         #########################################
 
