@@ -1,4 +1,5 @@
 import copy
+from collections.abc import Callable
 from functools import partial
 
 import numpy as np
@@ -120,17 +121,16 @@ class Solver(SolverBase):
         return all(self.verify_line(puzzle_line, clue_run_lengths)
                    for puzzle_line, clue_run_lengths in self.get_lines_and_clues_raw())
 
-    # TODO:
-    #  I should get rid of this function and just do if-else, since the string concatenation is slowing things down
-    #  when not changing tiles or displaying steps
-    def display_changes(self, operation, description):
+    def display_changes(self, operation, description_func: Callable[[], str]):
+        """
+        :param description_func:
+            A function that returns a string, because that way we can delay string evaluation until necessary
+        """
         tiles_changed = operation()
 
-        if tiles_changed:
-            title = f"{self.puzzle_name} - After {description}"
-
-            if self.display_steps:
-                display_picross(self, title=title)
+        if tiles_changed and self.display_steps:
+            title = f"{self.puzzle_name} - After {description_func()}"
+            display_picross(self, title=title)
 
             # if self.track_changes:
             #     self.saved_state = SolverBase(self)
@@ -146,12 +146,12 @@ class Solver(SolverBase):
 
     def solve(self):
         self.initialize_clue_runs()
-        self.display_changes(self.initial_solving_pass, "Initial pass")
+        self.display_changes(self.initial_solving_pass, lambda:"Initial pass")
 
         tiles_changed = True
         while tiles_changed or self.has_dirty_clue_runs():
             self.clean_all_clue_runs()
-            tiles_changed = self.display_changes(self.solving_pass, "Solving pass")
+            tiles_changed = self.display_changes(self.solving_pass, lambda:"Solving pass")
 
     def initialize_clue_runs(self):
         for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle)):
@@ -165,7 +165,7 @@ class Solver(SolverBase):
 
     def initial_solving_pass(self):
         for clue_run in self.get_all_clue_runs():
-            self.display_changes(clue_run.apply, f"Initialize {clue_run}")
+            self.display_changes(clue_run.apply, lambda:f"Initialize {clue_run}")
 
     def init_line_clue(self, line_clue, axis, line_index, clue_run_lengths, line):
         deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
@@ -183,7 +183,7 @@ class Solver(SolverBase):
         return_val = False
 
         for axis, line_index, puzzle_line, line_clue in self.enumerate_lines_and_clues():
-            return_val |= self.display_changes(partial(self.solve_line, axis, line_index, puzzle_line, line_clue), f"Solve line {line_name(axis, line_index)}")
+            return_val |= self.display_changes(partial(self.solve_line, axis, line_index, puzzle_line, line_clue), lambda:f"Solve line {line_name(axis, line_index)}")
 
         return return_val
 
@@ -192,7 +192,7 @@ class Solver(SolverBase):
 
         for clue_index, clue_run in enumerate(line_clue):
             # Any solving logic that does not require other clue runs
-            return_val |= self.display_changes(clue_run.solve_self, f"Solve {clue_run}")
+            return_val |= self.display_changes(clue_run.solve_self, lambda:f"Solve {clue_run}")
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
@@ -239,14 +239,14 @@ class Solver(SolverBase):
 
             if guaranteed_run_start is not None:
                 # Fill guaranteed run
-                return_val |= self.display_changes(partial(fill, puzzle_line, guaranteed_run_start, guaranteed_run_end), f"Fill guaranteed run {run_name(axis, line_index, guaranteed_run_start, guaranteed_run_end)}")
+                return_val |= self.display_changes(partial(fill, puzzle_line, guaranteed_run_start, guaranteed_run_end), lambda:f"Fill guaranteed run {run_name(axis, line_index, guaranteed_run_start, guaranteed_run_end)}")
 
                 # If filled run is same length as all runs that can contain it, cross extremities
                 if guaranteed_length is not None and guaranteed_length > 0:
                     if guaranteed_run_start > 0:
-                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_start - 1), f"Cross guaranteed start {tile_name(axis, line_index, guaranteed_run_start)}")
+                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_start - 1), lambda:f"Cross guaranteed start {tile_name(axis, line_index, guaranteed_run_start)}")
                     if guaranteed_run_end < len(puzzle_line):
-                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_end), f"Cross guaranteed end {tile_name(axis, line_index, guaranteed_run_end)}")
+                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_end), lambda:f"Cross guaranteed end {tile_name(axis, line_index, guaranteed_run_end)}")
 
             if first_containing_clue_run is None:
                 continue
