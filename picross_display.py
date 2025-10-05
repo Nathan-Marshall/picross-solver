@@ -56,7 +56,7 @@ def display_picross(solver_base, title=None, block=True, btn_solve_callback=None
         for j, clue_run in enumerate(reversed(clue)):
             hue = first_hue + j / len(clue)
             sat = 0 if clue_run.is_fixed() else 1
-            if not hasattr(clue_run, 'color'):
+            if not hasattr(clue_run, 'color') or colorsys.hls_to_rgb(*clue_run.color)[2] != sat:
                 clue_run.color = colorsys.hls_to_rgb(hue, .5, sat)
 
             ax.text(-1 - j / 2, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
