@@ -5,14 +5,13 @@ def picross_import(filename):
     result = []
     for line in lines:
         # Ignore the dimensions and title
-        data = line.split('\t')[2:]
+        data = line[max(line.rfind('\t'), line.rfind(' ')) + 1:]
 
         # Split on the dash
-        for d in data:
-            sections = d.split('-')
+        sections = data.split('-')
 
-            # Split on the colons and the commas
-            arrays = [[[int(num) for num in item.split(',')] for item in sec.split(':')] for sec in sections]
-            result.append(arrays)
+        # Split on the colons and the commas
+        arrays = [[[int(num) for num in item.split(',')] for item in sec.split(':')] for sec in sections]
+        result.append(arrays)
 
     return result
