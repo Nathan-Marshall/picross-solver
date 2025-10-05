@@ -267,19 +267,25 @@ class ClueRun(ClueRunBase):
             return return_val
 
         # TODO:
-        #  move this out of solve_self. Instead, iterate through each filled run, and check for the set of all clues
-        #  (and their starts) that can contain it. The first and last in this set can adjust their bounds, then we can
-        #  do "multiple ownership with minimum size" using the same set.
+        #  move this out of solve_self. Instead, iterate through each filled run, and check for the set of all ClueRuns
+        #  (and their PotentialRuns) that can contain it. The first and last in this set can adjust their bounds,
+        #  then we can do "multiple ownership with minimum size" using the same set.
         # TODO:
         #  multiple ownership with minimum size
-        #  - get the set of all starts from all ClueRuns that contain a given filled run
-        #  - determine the tiles overlapped by all of the potential runs
+        #  - get the set of all PotentialRuns from all ClueRuns that contain a given filled run
+        #  - determine the tiles overlapped by all of the PotentialRuns
         #  - can this replace regular rules for partially exclusive tiles?
 
         # TODO:
         #  I'm not sure if the above two TODOs still apply... I felt like no... but actually there might be a
         #  difference between filling ALL tiles overlapped, and whatever we're doing. Most likely it CAN replace regular
         #  partially exclusive rules.
+        #  ...
+        #  Unless... how do we get cases where there is a gap between the already-filled run and the guaranteed tiles?
+        #  It needs to involve two separate already-filled runs. There can be guaranteed tiles in the space between them
+        #  where their potential runs overlap.
+        #  Perhaps this can be answered by asking each individual tile "For the set of clue runs that contain you,
+        #  are you contained by every potential run?" ... or maybe not...
 
         #########################################
 
