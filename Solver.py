@@ -196,60 +196,32 @@ class Solver(SolverBase):
 
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
-            first_containing_clue_run = None
-            last_containing_clue_run = None
+            first_start = len(puzzle_line)
+            last_start = 0
+            first_end = len(puzzle_line)
+            last_end = 0
 
-            guaranteed_run_start = None  # Last start whose resulting run contains this filled run
-            guaranteed_run_end = None  # First end whose resulting run contains this filled run
-            # If positive, it means all clue runs that can contain this filled run are exactly the length of the
-            # guaranteed run
-            guaranteed_length = None
-
+            # Iterate all potential runs containing the filled run, from all ClueRuns
             for clue_run in line_clue:
-                # Get all starts for which the resulting run contains this filled run
-                potential_runs = clue_run.get_containing_potential_runs(start, end)
+                for potential_run in clue_run.get_containing_potential_runs(start, end):
+                    first_start = min(first_start, potential_run.start)
+                    last_start = max(last_start, potential_run.start)
+                    first_end = min(first_end, potential_run.end)
+                    last_end = max(last_end, potential_run.end)
 
-                if not potential_runs:
-                    continue  # Clue run cannot contain this filled run
+            if last_start < start:
+                # Fill guaranteed start
+                return_val |= self.display_changes(partial(fill, puzzle_line, last_start, start), lambda: f"Fill guaranteed start {run_name(axis, line_index, last_start, start)}")
 
-                for potential_run in potential_runs:
-                    # Find last start whose resulting run contains this filled run
-                    if guaranteed_run_start is None or guaranteed_run_start < potential_run.start:
-                        guaranteed_run_start = potential_run.start
+                if last_start == first_start and first_start > 0:
+                    return_val |= self.display_changes(partial(cross, puzzle_line, first_start - 1), lambda: f"Cross before guaranteed start {tile_name(axis, line_index, first_start - 1)}")
 
-                    # Find first end whose resulting run contains this filled run
-                    if guaranteed_run_end is None or guaranteed_run_end > potential_run.end:
-                        guaranteed_run_end = potential_run.end
+            if first_end > end:
+                # Fill guaranteed end
+                return_val |= self.display_changes(partial(fill, puzzle_line, end, first_end), lambda: f"Fill guaranteed end {run_name(axis, line_index, first_end, end)}")
 
-                last_containing_clue_run = clue_run
-
-                if first_containing_clue_run is None:
-                    first_containing_clue_run = clue_run
-
-            # Calculate the length of the guaranteed run
-            if guaranteed_length is None:
-                guaranteed_length = guaranteed_run_end - guaranteed_run_start
-
-            # Set guaranteed_length to -1 if there is a clue run with a larger length that can contain it.
-            # -1 indicates that the exact length is not guaranteed.
-            for clue_run in line_clue:
-                if guaranteed_length != -1 and clue_run.length > guaranteed_length:
-                    guaranteed_length = -1
-                    break
-
-            if guaranteed_run_start is not None:
-                # Fill guaranteed run
-                return_val |= self.display_changes(partial(fill, puzzle_line, guaranteed_run_start, guaranteed_run_end), lambda:f"Fill guaranteed run {run_name(axis, line_index, guaranteed_run_start, guaranteed_run_end)}")
-
-                # If filled run is same length as all runs that can contain it, cross extremities
-                if guaranteed_length is not None and guaranteed_length > 0:
-                    if guaranteed_run_start > 0:
-                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_start - 1), lambda:f"Cross guaranteed start {tile_name(axis, line_index, guaranteed_run_start)}")
-                    if guaranteed_run_end < len(puzzle_line):
-                        return_val |= self.display_changes(partial(cross, puzzle_line, guaranteed_run_end), lambda:f"Cross guaranteed end {tile_name(axis, line_index, guaranteed_run_end)}")
-
-            if first_containing_clue_run is None:
-                continue
+                if first_end == last_end and last_end < len(puzzle_line):
+                    return_val |= self.display_changes(partial(cross, puzzle_line, last_end), lambda: f"Cross after guaranteed end {tile_name(axis, line_index, last_end)}")
 
             # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
             #  speeds up the algorithm over this
