@@ -316,12 +316,6 @@ class ClueRun(ClueRunBase):
 
         self.assert_valid()
 
-        if first_partial_excl_run_start is not None and last_partial_excl_run_end is not None:
-            # There is a fully exclusive section that can be filled
-            return_val |= fill(self.line, first_partial_excl_run_start, last_partial_excl_run_end)
-            if return_val:
-                self.apply()
-
         if self.is_fixed():
             return return_val
 
