@@ -171,58 +171,40 @@ class ClueRun(ClueRunBase):
     def is_fixed(self):
         return len(self.potential_runs) == 1
 
-    def remove_starts_after(self, start):
+    def remove_starts_before(self, i):
         return_val = False
 
-        while self.last_start() > start:
+        while self.first_start() < i:
+            return_val |= self.remove_first()
+
+        return_val |= self.apply()
+
+        return return_val
+
+    def remove_starts_after(self, i):
+        return_val = False
+
+        while self.last_start() > i:
             return_val |= self.remove_last()
 
         return_val |= self.apply()
 
         return return_val
 
-    def remove_ends_before(self, end):
+    def remove_ends_before(self, i):
         return_val = False
 
-        while self.first_end() < end:
+        while self.first_end() < i:
             return_val |= self.remove_first()
 
         return_val |= self.apply()
 
         return return_val
 
-    # Removes first_start and any other starts within n-1 tiles after it.
-    def shrink_start(self, n=1):
-        self.solver.assert_puzzle(n <= self.last_start() - self.first_start(), f"{self} attempted to shrink start more than possible.")
-
-        if n <= 0:
-            return False
-
+    def remove_ends_after(self, i):
         return_val = False
 
-        removed_start = self.first_start()
-        return_val |= self.remove_first()
-
-        while self.first_start() < removed_start + n:
-            return_val |= self.remove_first()
-
-        return_val |= self.apply()
-
-        return return_val
-
-    # Removes last_start and any other starts within n-1 tiles before it.
-    def shrink_end(self, n=1):
-        self.solver.assert_puzzle(n <= self.last_start() - self.first_start(), f"{self} attempted to shrink end more than possible.")
-
-        if n <= 0:
-            return False
-
-        return_val = False
-
-        removed_start = self.last_start()
-        return_val |= self.remove_last()
-
-        while self.last_start() > removed_start - n:
+        while self.last_end() > i:
             return_val |= self.remove_last()
 
         return_val |= self.apply()
@@ -292,54 +274,54 @@ class ClueRun(ClueRunBase):
         # SOLVE SELF 4)
         # Tighten bounds to surround the first and last exclusively owned filled tiles
 
-        # Find the first filled run not shared by a preceding ClueRun
-        first_partially_exclusive_filled = None
+        # Find the first filled run not shared by a prior ClueRun
+        first_partial_excl_run_start = None
 
         for i in range(self.first_start(), self.last_end()):
             if not self.line[i].is_filled():
                 continue
 
-            run_end = find_end(self.line, i)
+            run_start = i
+            run_end = find_end(self.line, run_start)
 
-            if self.is_partially_exclusive_first(i, run_end):
-                first_partially_exclusive_filled = i
+            if self.is_partially_exclusive_first(run_start, run_end):
+                first_partial_excl_run_start = run_start
                 break
 
             i = run_end
 
-        # Find the last filled run not shared by a succeeding ClueRun.
-        last_partially_exclusive_filled = None
+        if first_partial_excl_run_start is not None:
+            # Must not start after the start of the first filled run not shared by a prior ClueRun.
+            return_val |= self.remove_starts_after(first_partial_excl_run_start)
+
+        # Find the last filled run not shared by a later ClueRun.
+        last_partial_excl_run_end = None
 
         for i in range(self.last_end() - 1, self.first_start() - 1, -1):
             if not self.line[i].is_filled():
                 continue
 
             run_start = find_start_backward(self.line, i)
+            run_end = i + 1
 
-            if self.is_partially_exclusive_last(run_start, i + 1):
-                last_partially_exclusive_filled = i
+            if self.is_partially_exclusive_last(run_start, run_end):
+                last_partial_excl_run_end = run_end
                 break
 
             i = run_start - 1
 
-        if first_partially_exclusive_filled is not None:
-            # Must not start after the first filled tile which cannot be shared by a prior ClueRun.
-            n = self.last_end() - (first_partially_exclusive_filled + self.length)
-            return_val |= self.shrink_end(n)
-
-        if last_partially_exclusive_filled is not None:
-            # Must not end before the last filled tile which cannot be shared by a later ClueRun.
-            n = (last_partially_exclusive_filled + 1 - self.length) - self.first_start()
-            return_val |= self.shrink_start(n)
+        if last_partial_excl_run_end is not None:
+            # Must not end before the end of the last filled run not shared by a later ClueRun.
+            return_val |= self.remove_ends_before(last_partial_excl_run_end)
 
         self.assert_valid()
 
-        if first_partially_exclusive_filled is not None and last_partially_exclusive_filled is not None:
-            # Fill all tiles between first_exclusive_filled and last_exclusive_filled
-            for i in range(first_partially_exclusive_filled, last_partially_exclusive_filled + 1):
-                return_val |= fill(self.line, i)
+        if first_partial_excl_run_start is not None and last_partial_excl_run_end is not None:
+            # There is a fully exclusive section that can be filled
+            return_val |= fill(self.line, first_partial_excl_run_start, last_partial_excl_run_end)
+            if return_val:
+                self.apply()
 
-        return_val |= self.apply()
         if self.is_fixed():
             return return_val
 
@@ -351,15 +333,15 @@ class ClueRun(ClueRunBase):
             if not (self.must_contain(i) or self.is_exclusive(i) and self.line[i].is_filled()):
                 continue
 
-            other_clue_run = self.prev_run
-            while other_clue_run is not None:
-                return_val |= other_clue_run.shrink_end(other_clue_run.last_end() - 1 - i + 2)
-                other_clue_run = other_clue_run.prev_run
+            prior = self.prev_run
+            while prior is not None:
+                return_val |= prior.remove_ends_after(i - 1)
+                prior = prior.prev_run
 
-            other_clue_run = self.next_run
-            while other_clue_run is not None:
-                return_val |= other_clue_run.shrink_start(i - other_clue_run.first_start() + 2)
-                other_clue_run = other_clue_run.next_run
+            later = self.next_run
+            while later is not None:
+                return_val |= later.remove_starts_before(i + 2)
+                later = later.next_run
 
         return_val |= self.apply()
         return return_val
