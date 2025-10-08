@@ -1,3 +1,4 @@
+import numpy as np
 from helpers import *
 
 class Tile:
@@ -25,9 +26,27 @@ class Tile:
 
         self.line_raw[self.col_index] = state
 
-        if state == State.CROSSED:
-            modified_clue_runs = set()
+        modified_clue_runs = set()
 
+        if state == State.FILLED:
+            for neighbour_axis in range(2):
+                on_axis_index = self.get_index(neighbour_axis)
+                off_axis_index = self.get_index(not neighbour_axis)
+                for neighbour_index in [on_axis_index - 1, on_axis_index + 1]:
+                    if neighbour_index < 0 or neighbour_index >= self.solver.puzzle.shape[neighbour_axis]:
+                        continue
+
+                    neighbour_tile = np.take(self.solver.puzzle, neighbour_index, neighbour_axis)[off_axis_index]
+                    axis_runs = neighbour_tile.potential_runs[not neighbour_axis]
+                    for potential_run in axis_runs[:]:
+                        if (potential_run.end if neighbour_index < on_axis_index else potential_run.start - 1) != on_axis_index:
+                            continue
+                        if potential_run not in potential_run.clue_run.potential_runs:
+                            continue
+                        potential_run.clue_run.remove_run(potential_run)
+                        modified_clue_runs.add(potential_run.clue_run)
+                        self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {neighbour_tile}, neighbour of filled {self}")
+        elif state == State.CROSSED:
             for axis_runs in self.potential_runs:
                 for potential_run in axis_runs[:]:
                     if potential_run not in potential_run.clue_run.potential_runs:
@@ -35,10 +54,10 @@ class Tile:
                     potential_run.clue_run.remove_run(potential_run)
                     modified_clue_runs.add(potential_run.clue_run)
                     self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {self}")
-            self.solver.assert_puzzle(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS], f"Failed to clear all potential runs from {self}")
+            self.solver.assert_puzzle(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS], f"Failed to clear all potential runs from crossed {self}")
 
-            for modified_clue_run in modified_clue_runs:
-                modified_clue_run.apply()
+        for modified_clue_run in modified_clue_runs:
+            modified_clue_run.apply()
 
         return True
 
@@ -62,6 +81,9 @@ class Tile:
 
     def cross(self):
         return self.set_state(State.CROSSED)
+
+    def get_index(self, axis):
+        return self.row_index if axis == Axis.ROWS else self.col_index
 
     def add_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.axis]
