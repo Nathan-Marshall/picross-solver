@@ -250,12 +250,6 @@ class ClueRun(ClueRunBase):
                 return_val |= self.remove_run(potential_run)
                 continue
 
-            # SOLVE SELF 3)
-            # Remove any potential run containing a cross.
-            if potential_run.contains_cross():
-                return_val |= self.remove_run(potential_run)
-                continue
-
         return_val |= self.apply()
         if self.is_fixed():
             return return_val
@@ -267,7 +261,7 @@ class ClueRun(ClueRunBase):
         #  Perhaps this can be answered by asking each individual tile "For the set of clue runs that contain you,
         #  are you contained by every potential run?" ... or maybe not...
 
-        # SOLVE SELF 4)
+        # SOLVE SELF 3)
         # If a tile is fixed, other ClueRuns must end before or start after (with a gap).
         for i in range(self.first_start(), self.last_end()):
             if not (self.must_contain(i) or self.is_exclusive(i) and self.line[i].is_filled()):

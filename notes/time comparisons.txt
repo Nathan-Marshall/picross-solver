@@ -22,3 +22,7 @@ solved:298, unsolved:2, ~time:5.75
 October 8th AFTER EARLY RETURN IN remove_starts_after AND remove_ends_before (similar times for solve_self and solve_line versions)
 solved:30, unsolved:0, time:0.21798181533813477
 solved:298, unsolved:2, time:5.2761619091033936
+
+October 8th AFTER REDUNDANT CHECK FOR CROSSED TILES WAS REMOVED
+solved:30, unsolved:0, time:0.20492100715637207
+solved:298, unsolved:2, time:4.545135736465454
