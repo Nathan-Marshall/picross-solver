@@ -233,6 +233,9 @@ class ClueRun(ClueRunBase):
             if potential_run not in self.potential_runs:
                 continue
 
+            #TODO: Whenever runs are removed, automatically remove any new guaranteed overlaps, rather
+            # than checking here.
+
             # SOLVE SELF 1)
             # Trim guaranteed overlap with adjacent ClueRuns:
             # Remove any start that comes before or adjacent to prev_run.first_end()
@@ -243,33 +246,6 @@ class ClueRun(ClueRunBase):
             if self.next_run is not None and potential_run.end >= self.next_run.last_start():
                 return_val |= self.remove_run(potential_run)
                 continue
-
-        return_val |= self.apply()
-        if self.is_fixed():
-            return return_val
-
-        # TODO:
-        #  How do we get cases where there is a gap between the already-filled run and the guaranteed tiles?
-        #  It needs to involve two separate already-filled runs. There can be guaranteed tiles in the space between them
-        #  where their potential runs overlap.
-        #  Perhaps this can be answered by asking each individual tile "For the set of clue runs that contain you,
-        #  are you contained by every potential run?" ... or maybe not...
-
-        # SOLVE SELF 2)
-        # If a tile is fixed, other ClueRuns must end before or start after (with a gap).
-        for i in range(self.first_start(), self.last_end()):
-            if not (self.must_contain(i) or self.is_exclusive(i) and self.line[i].is_filled()):
-                continue
-
-            prior = self.prev_run
-            while prior is not None:
-                return_val |= prior.remove_ends_after(i - 1)
-                prior = prior.prev_run
-
-            later = self.next_run
-            while later is not None:
-                return_val |= later.remove_starts_before(i + 2)
-                later = later.next_run
 
         return_val |= self.apply()
         return return_val
