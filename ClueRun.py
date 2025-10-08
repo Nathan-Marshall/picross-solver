@@ -32,19 +32,24 @@ class ClueRun(ClueRunBase):
             for tile in potential_run.tiles():
                 tile.add_run(potential_run)
 
+        self.dirty = True # Whether a potential_run was removed since apply() was last called
+
     def __str__(self):
         return f"ClueRun({clue_run_name(self.axis, self.line_index, self.clue_index)})"
 
     def remove_run(self, potential_run):
         self.potential_runs.remove(potential_run)
+        self.dirty = True
         return DirtyFlag.CLUES | potential_run.remove_from_tiles()
 
     def remove_first(self):
         first_run = self.potential_runs.pop(0)
+        self.dirty = True
         return DirtyFlag.CLUES | first_run.remove_from_tiles()
 
     def remove_last(self):
         last_run = self.potential_runs.pop()
+        self.dirty = True
         return DirtyFlag.CLUES | last_run.remove_from_tiles()
 
     def assert_valid(self):
@@ -249,6 +254,9 @@ class ClueRun(ClueRunBase):
     def apply(self):
         dirty_flags = DirtyFlag.NONE
 
+        if not self.dirty:
+            return dirty_flags
+
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
             dirty_flags |= fill(self.line, i)
@@ -260,4 +268,5 @@ class ClueRun(ClueRunBase):
             if self.last_end() < len(self.line):
                 dirty_flags |= cross(self.line, self.last_end())
 
+        self.dirty = False
         return dirty_flags
