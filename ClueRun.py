@@ -32,25 +32,20 @@ class ClueRun(ClueRunBase):
             for tile in potential_run.tiles():
                 tile.add_run(potential_run)
 
-        self.dirty = False  # cleared every pass; if true, indicates that the run was modified this pass
-
     def __str__(self):
         return f"ClueRun({clue_run_name(self.axis, self.line_index, self.clue_index)})"
 
     def remove_run(self, potential_run):
         self.potential_runs.remove(potential_run)
-        self.dirty = True
-        return potential_run.remove_from_tiles()
+        return DirtyFlag.CLUES | potential_run.remove_from_tiles()
 
     def remove_first(self):
         first_run = self.potential_runs.pop(0)
-        self.dirty = True
-        return first_run.remove_from_tiles()
+        return DirtyFlag.CLUES | first_run.remove_from_tiles()
 
     def remove_last(self):
         last_run = self.potential_runs.pop()
-        self.dirty = True
-        return last_run.remove_from_tiles()
+        return DirtyFlag.CLUES | last_run.remove_from_tiles()
 
     def assert_valid(self):
         self.solver.assert_puzzle(len(self.potential_runs) > 0, f"{self} has no potential runs.")
@@ -175,59 +170,59 @@ class ClueRun(ClueRunBase):
         if self.first_start() >= i:
             return False
 
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         while self.first_start() < i:
-            return_val |= self.remove_first()
+            dirty_flags |= self.remove_first()
 
-        return_val |= self.apply()
+        dirty_flags |= self.apply()
 
-        return return_val
+        return dirty_flags
 
     def remove_starts_after(self, i):
         if self.last_start() <= i:
             return False
 
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         while self.last_start() > i:
-            return_val |= self.remove_last()
+            dirty_flags |= self.remove_last()
 
-        return_val |= self.apply()
+        dirty_flags |= self.apply()
 
-        return return_val
+        return dirty_flags
 
     def remove_ends_before(self, i):
         if self.first_end() >= i:
             return False
 
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         while self.first_end() < i:
-            return_val |= self.remove_first()
+            dirty_flags |= self.remove_first()
 
-        return_val |= self.apply()
+        dirty_flags |= self.apply()
 
-        return return_val
+        return dirty_flags
 
     def remove_ends_after(self, i):
         if self.last_end() <= i:
             return False
 
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         while self.last_end() > i:
-            return_val |= self.remove_last()
+            dirty_flags |= self.remove_last()
 
-        return_val |= self.apply()
+        dirty_flags |= self.apply()
 
-        return return_val
+        return dirty_flags
 
     def solve_self(self):
         if self.is_fixed():
             return False
 
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         for potential_run in self.potential_runs[:]:
             if potential_run not in self.potential_runs:
@@ -241,28 +236,28 @@ class ClueRun(ClueRunBase):
             # Remove any start that comes before or adjacent to prev_run.first_end()
             # or any end that comes after or adjacent to next_run.last_start().
             if self.prev_run is not None and potential_run.start <= self.prev_run.first_end():
-                return_val |= self.remove_run(potential_run)
+                dirty_flags |= self.remove_run(potential_run)
                 continue
             if self.next_run is not None and potential_run.end >= self.next_run.last_start():
-                return_val |= self.remove_run(potential_run)
+                dirty_flags |= self.remove_run(potential_run)
                 continue
 
-        return_val |= self.apply()
-        return return_val
+        dirty_flags |= self.apply()
+        return dirty_flags
 
     # Apply known tiles to the board
     def apply(self):
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
-            return_val |= fill(self.line, i)
+            dirty_flags |= fill(self.line, i)
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
             if self.first_start() > 0:
-                return_val |= cross(self.line, self.first_start() - 1)
+                dirty_flags |= cross(self.line, self.first_start() - 1)
             if self.last_end() < len(self.line):
-                return_val |= cross(self.line, self.last_end())
+                dirty_flags |= cross(self.line, self.last_end())
 
-        return return_val
+        return dirty_flags

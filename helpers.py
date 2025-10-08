@@ -7,6 +7,15 @@ class Axis:
     ROWS = 0
     COLS = 1
 
+class DirtyFlag:
+    NONE = 0b00
+    CLUES = 0b01 # PotentialRuns have been removed from ClueRuns
+    BOARD = 0b10 # New tiles have been crossed or filled
+    ALL = 0b11
+
+def board_dirty(dirty_flags):
+    return DirtyFlag.BOARD & dirty_flags
+
 def axis_name(axis):
     return "cols" if axis else "rows"
 
@@ -55,12 +64,12 @@ def set_state(state, line, start, end=None):
     if end is None:
         end = start + 1
 
-    return_val = False
+    dirty_flags = DirtyFlag.NONE
 
     for tile in line[start:end]:
-        return_val |= tile.set_state(state)
+        dirty_flags |= tile.set_state(state)
 
-    return return_val
+    return dirty_flags
 
 def fill(line, start, end=None):
     return set_state(State.FILLED, line, start, end)

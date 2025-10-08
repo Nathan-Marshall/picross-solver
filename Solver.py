@@ -126,9 +126,9 @@ class Solver(SolverBase):
         :param description_func:
             A function that returns a string, because that way we can delay string evaluation until necessary
         """
-        tiles_changed = operation()
+        dirty_flags = operation()
 
-        if tiles_changed and self.display_steps:
+        if board_dirty(dirty_flags) and self.display_steps:
             title = f"{self.puzzle_name} - After {description_func()}"
             display_picross(self, title=title)
 
@@ -136,7 +136,7 @@ class Solver(SolverBase):
             #     self.saved_state = SolverBase(self)
             #     self.saved_state_title = title
 
-        return tiles_changed
+        return dirty_flags
 
     @staticmethod
     def verify_line(puzzle_line, clue_run_lengths):
@@ -145,13 +145,11 @@ class Solver(SolverBase):
         return lengths == clue_run_lengths
 
     def solve(self):
-        self.initialize_clue_runs()
-        self.display_changes(self.initial_solving_pass, lambda:"Initial pass")
+        dirty_flags = self.initialize_clue_runs()
+        dirty_flags |= self.display_changes(self.initial_solving_pass, lambda:"Initial pass")
 
-        tiles_changed = True
-        while tiles_changed or self.has_dirty_clue_runs():
-            self.clean_all_clue_runs()
-            tiles_changed = self.display_changes(self.solving_pass, lambda:"Solving pass")
+        while dirty_flags:
+            dirty_flags = self.display_changes(self.solving_pass, lambda:"Solving pass")
 
     def initialize_clue_runs(self):
         for axis, puzzle_view in enumerate(puzzle_and_transpose(self.puzzle)):
@@ -162,10 +160,15 @@ class Solver(SolverBase):
                 line_clue = []
                 line_clues.append(line_clue)
                 self.init_line_clue(line_clue, axis, line_index, clue_run_lengths, puzzle_line)
+        return DirtyFlag.CLUES
 
     def initial_solving_pass(self):
+        dirty_flags = DirtyFlag.NONE
+
         for clue_run in self.get_all_clue_runs():
-            self.display_changes(clue_run.apply, lambda:f"Initialize {clue_run}")
+            dirty_flags |= self.display_changes(clue_run.apply, lambda:f"Initialize {clue_run}")
+
+        return dirty_flags
 
     def init_line_clue(self, line_clue, axis, line_index, clue_run_lengths, line):
         deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
@@ -180,19 +183,19 @@ class Solver(SolverBase):
         return line_clue
 
     def solving_pass(self):
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         for axis, line_index, puzzle_line, line_clue in self.enumerate_lines_and_clues():
-            return_val |= self.display_changes(partial(self.solve_line, axis, line_index, puzzle_line, line_clue), lambda:f"Solve line {line_name(axis, line_index)}")
+            dirty_flags |= self.display_changes(partial(self.solve_line, axis, line_index, puzzle_line, line_clue), lambda:f"Solve line {line_name(axis, line_index)}")
 
-        return return_val
+        return dirty_flags
 
     def solve_line(self, axis, line_index, puzzle_line, line_clue):
-        return_val = False
+        dirty_flags = DirtyFlag.NONE
 
         for clue_index, clue_run in enumerate(line_clue):
             # Any solving logic that does not require other clue runs
-            return_val |= self.display_changes(clue_run.solve_self, lambda:f"Solve {clue_run}")
+            dirty_flags |= self.display_changes(clue_run.solve_self, lambda:f"Solve {clue_run}")
 
         trimmed_start = [False] * len(line_clue)
         ends_to_trim = [-1] * len(line_clue)
@@ -226,21 +229,21 @@ class Solver(SolverBase):
 
             if last_start < start:
                 # Fill guaranteed start
-                return_val |= self.display_changes(partial(fill, puzzle_line, last_start, start), lambda: f"Fill guaranteed start {run_name(axis, line_index, last_start, start)}")
+                dirty_flags |= self.display_changes(partial(fill, puzzle_line, last_start, start), lambda: f"Fill guaranteed start {run_name(axis, line_index, last_start, start)}")
 
                 if last_start == first_start and first_start > 0:
-                    return_val |= self.display_changes(partial(cross, puzzle_line, first_start - 1), lambda: f"Cross before guaranteed start {tile_name(axis, line_index, first_start - 1)}")
+                    dirty_flags |= self.display_changes(partial(cross, puzzle_line, first_start - 1), lambda: f"Cross before guaranteed start {tile_name(axis, line_index, first_start - 1)}")
 
             if first_end > end:
                 # Fill guaranteed end
-                return_val |= self.display_changes(partial(fill, puzzle_line, end, first_end), lambda: f"Fill guaranteed end {run_name(axis, line_index, first_end, end)}")
+                dirty_flags |= self.display_changes(partial(fill, puzzle_line, end, first_end), lambda: f"Fill guaranteed end {run_name(axis, line_index, first_end, end)}")
 
                 if first_end == last_end and last_end < len(puzzle_line):
-                    return_val |= self.display_changes(partial(cross, puzzle_line, last_end), lambda: f"Cross after guaranteed end {tile_name(axis, line_index, last_end)}")
+                    dirty_flags |= self.display_changes(partial(cross, puzzle_line, last_end), lambda: f"Cross after guaranteed end {tile_name(axis, line_index, last_end)}")
 
             # The first clue run that can contain this run must not start after the run does.
             if not trimmed_start[first_containing_clue_run.clue_index]:
-                return_val |= self.display_changes(partial(first_containing_clue_run.remove_starts_after, start), lambda: f"{first_containing_clue_run} first to contain {run_name(axis, line_index, start, end)} so last_start={start}")
+                dirty_flags |= self.display_changes(partial(first_containing_clue_run.remove_starts_after, start), lambda: f"{first_containing_clue_run} first to contain {run_name(axis, line_index, start, end)} so last_start={start}")
                 trimmed_start[first_containing_clue_run.clue_index] = True
 
             # The last clue run that can contain this run must not end before the run does. (mark it for now)
@@ -250,14 +253,6 @@ class Solver(SolverBase):
         for clue_index, clue_run in enumerate(line_clue):
             if ends_to_trim[clue_index] != -1:
                 end = ends_to_trim[clue_index]
-                return_val |= self.display_changes(partial(clue_run.remove_ends_before, end), lambda: f"{clue_run} last to contain {run_name(axis, line_index, start, end)} so first_end={end}")
+                dirty_flags |= self.display_changes(partial(clue_run.remove_ends_before, end), lambda: f"{clue_run} last to contain {run_name(axis, line_index, start, end)} so first_end={end}")
 
-        return return_val
-
-    def has_dirty_clue_runs(self):
-        return any(clue_run.dirty
-                   for clue_run in self.get_all_clue_runs())
-
-    def clean_all_clue_runs(self):
-        for clue_run in self.get_all_clue_runs():
-            clue_run.dirty = False
+        return dirty_flags
