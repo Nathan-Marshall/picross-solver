@@ -1,5 +1,6 @@
 ORIGINAL
 solved:30, unsolved:0, time:0.27785181999206543
+solved:298, unsolved:2, ~time:7.???
 
 AFTER TILE + POTENTIAL RUN STRUCTURE
 solved:30, unsolved:0, time:0.3916466236114502
@@ -12,6 +13,12 @@ solved:30, unsolved:0, time:0.2779974937438965
 
 August 4th AFTER AUTO-CROSS and AUTO-REMOVE-RUNS, WITHOUT UNNECESSARY STRING CONCAT
 solved:30, unsolved:0, time:0.25505805015563965
+solved:298, unsolved:2, ~time:6.2
 
 October 4th AFTER SOLVE_LINE REFACTOR
 solved:30, unsolved:0, time:0.2295675277709961
+solved:298, unsolved:2, ~time:5.75
+
+October 8th AFTER EARLY RETURN IN remove_starts_after AND remove_ends_before (similar times for solve_self and solve_line versions)
+solved:30, unsolved:0, time:0.21798181533813477
+solved:298, unsolved:2, time:5.2761619091033936

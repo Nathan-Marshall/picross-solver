@@ -172,6 +172,9 @@ class ClueRun(ClueRunBase):
         return len(self.potential_runs) == 1
 
     def remove_starts_before(self, i):
+        if self.first_start() >= i:
+            return False
+
         return_val = False
 
         while self.first_start() < i:
@@ -182,6 +185,9 @@ class ClueRun(ClueRunBase):
         return return_val
 
     def remove_starts_after(self, i):
+        if self.last_start() <= i:
+            return False
+
         return_val = False
 
         while self.last_start() > i:
@@ -192,6 +198,9 @@ class ClueRun(ClueRunBase):
         return return_val
 
     def remove_ends_before(self, i):
+        if self.first_end() >= i:
+            return False
+
         return_val = False
 
         while self.first_end() < i:
@@ -202,6 +211,9 @@ class ClueRun(ClueRunBase):
         return return_val
 
     def remove_ends_after(self, i):
+        if self.last_end() <= i:
+            return False
+
         return_val = False
 
         while self.last_end() > i:
@@ -249,76 +261,64 @@ class ClueRun(ClueRunBase):
             return return_val
 
         # TODO:
-        #  move this out of solve_self. Instead, iterate through each filled run, and check for the set of all ClueRuns
-        #  (and their PotentialRuns) that can contain it. The first and last in this set can adjust their bounds,
-        #  then we can do "multiple ownership with minimum size" using the same set.
-        # TODO:
-        #  multiple ownership with minimum size
-        #  - get the set of all PotentialRuns from all ClueRuns that contain a given filled run
-        #  - determine the tiles overlapped by all of the PotentialRuns
-        #  - can this replace regular rules for partially exclusive tiles?
-
-        # TODO:
-        #  I'm not sure if the above two TODOs still apply... I felt like no... but actually there might be a
-        #  difference between filling ALL tiles overlapped, and whatever we're doing. Most likely it CAN replace regular
-        #  partially exclusive rules.
-        #  ...
-        #  Unless... how do we get cases where there is a gap between the already-filled run and the guaranteed tiles?
+        #  How do we get cases where there is a gap between the already-filled run and the guaranteed tiles?
         #  It needs to involve two separate already-filled runs. There can be guaranteed tiles in the space between them
         #  where their potential runs overlap.
         #  Perhaps this can be answered by asking each individual tile "For the set of clue runs that contain you,
         #  are you contained by every potential run?" ... or maybe not...
 
         #########################################
-
-        # SOLVE SELF 4)
-        # Tighten bounds to surround the first and last exclusively owned filled tiles
-
-        # Find the first filled run not shared by a prior ClueRun
-        first_partial_excl_run_start = None
-
-        for i in range(self.first_start(), self.last_end()):
-            if not self.line[i].is_filled():
-                continue
-
-            run_start = i
-            run_end = find_end(self.line, run_start)
-
-            if self.is_partially_exclusive_first(run_start, run_end):
-                first_partial_excl_run_start = run_start
-                break
-
-            i = run_end
-
-        if first_partial_excl_run_start is not None:
-            # Must not start after the start of the first filled run not shared by a prior ClueRun.
-            return_val |= self.remove_starts_after(first_partial_excl_run_start)
-
-        # Find the last filled run not shared by a later ClueRun.
-        last_partial_excl_run_end = None
-
-        for i in range(self.last_end() - 1, self.first_start() - 1, -1):
-            if not self.line[i].is_filled():
-                continue
-
-            run_start = find_start_backward(self.line, i)
-            run_end = i + 1
-
-            if self.is_partially_exclusive_last(run_start, run_end):
-                last_partial_excl_run_end = run_end
-                break
-
-            i = run_start - 1
-
-        if last_partial_excl_run_end is not None:
-            # Must not end before the end of the last filled run not shared by a later ClueRun.
-            return_val |= self.remove_ends_before(last_partial_excl_run_end)
-
-        self.assert_valid()
-
-        if self.is_fixed():
-            return return_val
-
+        #
+        # # SOLVE SELF 4)
+        # # Tighten bounds to surround the first and last exclusively owned filled tiles.
+        # # This code has been superseded by some more concise albeit spread out code in Solver.solve_line.
+        # # The speed was very similar, though slightly faster with the solve_line approach.
+        #
+        # # Find the first filled run not shared by a prior ClueRun
+        # first_partial_excl_run_start = None
+        #
+        # for i in range(self.first_start(), self.last_end()):
+        #     if not self.line[i].is_filled():
+        #         continue
+        #
+        #     run_start = i
+        #     run_end = find_end(self.line, run_start)
+        #
+        #     if self.is_partially_exclusive_first(run_start, run_end):
+        #         first_partial_excl_run_start = run_start
+        #         break
+        #
+        #     i = run_end
+        #
+        # if first_partial_excl_run_start is not None:
+        #     # Must not start after the start of the first filled run not shared by a prior ClueRun.
+        #     return_val |= self.remove_starts_after(first_partial_excl_run_start)
+        #
+        # # Find the last filled run not shared by a later ClueRun.
+        # last_partial_excl_run_end = None
+        #
+        # for i in range(self.last_end() - 1, self.first_start() - 1, -1):
+        #     if not self.line[i].is_filled():
+        #         continue
+        #
+        #     run_start = find_start_backward(self.line, i)
+        #     run_end = i + 1
+        #
+        #     if self.is_partially_exclusive_last(run_start, run_end):
+        #         last_partial_excl_run_end = run_end
+        #         break
+        #
+        #     i = run_start - 1
+        #
+        # if last_partial_excl_run_end is not None:
+        #     # Must not end before the end of the last filled run not shared by a later ClueRun.
+        #     return_val |= self.remove_ends_before(last_partial_excl_run_end)
+        #
+        # self.assert_valid()
+        #
+        # if self.is_fixed():
+        #     return return_val
+        #
         #########################################
 
         # SOLVE SELF 5)

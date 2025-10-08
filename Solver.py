@@ -194,8 +194,14 @@ class Solver(SolverBase):
             # Any solving logic that does not require other clue runs
             return_val |= self.display_changes(clue_run.solve_self, lambda:f"Solve {clue_run}")
 
+        trimmed_start = [False] * len(line_clue)
+        ends_to_trim = [-1] * len(line_clue)
+
         # Iterate filled runs
         for start, end, length in get_run_starts_ends_lengths(puzzle_line):
+            first_containing_clue_run = None
+            last_containing_clue_run = None
+
             first_start = len(puzzle_line)
             last_start = 0
             first_end = len(puzzle_line)
@@ -203,7 +209,16 @@ class Solver(SolverBase):
 
             # Iterate all potential runs containing the filled run, from all ClueRuns
             for clue_run in line_clue:
-                for potential_run in clue_run.get_containing_potential_runs(start, end):
+                containing_potential_runs = clue_run.get_containing_potential_runs(start, end)
+
+                if not containing_potential_runs:
+                    continue
+
+                if first_containing_clue_run is None:
+                    first_containing_clue_run = clue_run
+                last_containing_clue_run = clue_run
+
+                for potential_run in containing_potential_runs:
                     first_start = min(first_start, potential_run.start)
                     last_start = max(last_start, potential_run.start)
                     first_end = min(first_end, potential_run.end)
@@ -223,13 +238,19 @@ class Solver(SolverBase):
                 if first_end == last_end and last_end < len(puzzle_line):
                     return_val |= self.display_changes(partial(cross, puzzle_line, last_end), lambda: f"Cross after guaranteed end {tile_name(axis, line_index, last_end)}")
 
-            # TODO: This is way more concise than the partial exclusive logic in solve_self, but that code still
-            #  speeds up the algorithm over this
             # The first clue run that can contain this run must not start after the run does.
-            #return_val |= self.display_changes(partial(first_containing_clue_run.remove_starts_after, start), f"{first_containing_clue_run} first to contain {run_name(axis, line_index, start, end)} so last_start={start}")
+            if not trimmed_start[first_containing_clue_run.clue_index]:
+                return_val |= self.display_changes(partial(first_containing_clue_run.remove_starts_after, start), lambda: f"{first_containing_clue_run} first to contain {run_name(axis, line_index, start, end)} so last_start={start}")
+                trimmed_start[first_containing_clue_run.clue_index] = True
 
-            # The last clue run that can contain this run must not end before the run does.
-            #return_val |= self.display_changes(partial(last_containing_clue_run.remove_ends_before, end), f"{last_containing_clue_run} last to contain {run_name(axis, line_index, start, end)} so first_end={end}")
+            # The last clue run that can contain this run must not end before the run does. (mark it for now)
+            ends_to_trim[last_containing_clue_run.clue_index] = end
+
+        # Trim any marked ClueRun to the end of the last filled run for which it was the last ClueRun to contain.
+        for clue_index, clue_run in enumerate(line_clue):
+            if ends_to_trim[clue_index] != -1:
+                end = ends_to_trim[clue_index]
+                return_val |= self.display_changes(partial(clue_run.remove_ends_before, end), lambda: f"{clue_run} last to contain {run_name(axis, line_index, start, end)} so first_end={end}")
 
         return return_val
 
