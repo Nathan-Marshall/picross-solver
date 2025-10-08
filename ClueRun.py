@@ -267,60 +267,6 @@ class ClueRun(ClueRunBase):
         #  Perhaps this can be answered by asking each individual tile "For the set of clue runs that contain you,
         #  are you contained by every potential run?" ... or maybe not...
 
-        #########################################
-        #
-        # # SOLVE SELF 4)
-        # # Tighten bounds to surround the first and last exclusively owned filled tiles.
-        # # This code has been superseded by some more concise albeit spread out code in Solver.solve_line.
-        # # The speed was very similar, though slightly faster with the solve_line approach.
-        #
-        # # Find the first filled run not shared by a prior ClueRun
-        # first_partial_excl_run_start = None
-        #
-        # for i in range(self.first_start(), self.last_end()):
-        #     if not self.line[i].is_filled():
-        #         continue
-        #
-        #     run_start = i
-        #     run_end = find_end(self.line, run_start)
-        #
-        #     if self.is_partially_exclusive_first(run_start, run_end):
-        #         first_partial_excl_run_start = run_start
-        #         break
-        #
-        #     i = run_end
-        #
-        # if first_partial_excl_run_start is not None:
-        #     # Must not start after the start of the first filled run not shared by a prior ClueRun.
-        #     return_val |= self.remove_starts_after(first_partial_excl_run_start)
-        #
-        # # Find the last filled run not shared by a later ClueRun.
-        # last_partial_excl_run_end = None
-        #
-        # for i in range(self.last_end() - 1, self.first_start() - 1, -1):
-        #     if not self.line[i].is_filled():
-        #         continue
-        #
-        #     run_start = find_start_backward(self.line, i)
-        #     run_end = i + 1
-        #
-        #     if self.is_partially_exclusive_last(run_start, run_end):
-        #         last_partial_excl_run_end = run_end
-        #         break
-        #
-        #     i = run_start - 1
-        #
-        # if last_partial_excl_run_end is not None:
-        #     # Must not end before the end of the last filled run not shared by a later ClueRun.
-        #     return_val |= self.remove_ends_before(last_partial_excl_run_end)
-        #
-        # self.assert_valid()
-        #
-        # if self.is_fixed():
-        #     return return_val
-        #
-        #########################################
-
         # SOLVE SELF 5)
         # If a tile is fixed, other ClueRuns must end before or start after (with a gap).
         for i in range(self.first_start(), self.last_end()):
