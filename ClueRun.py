@@ -32,6 +32,14 @@ class ClueRun(ClueRunBase):
             for tile in potential_run.tiles():
                 tile.add_run(potential_run)
 
+            tile_before = potential_run.tile_before()
+            if tile_before:
+                tile_before.add_adjacent_run(potential_run)
+
+            tile_after = potential_run.tile_after()
+            if tile_after:
+                tile_after.add_adjacent_run(potential_run)
+
         self.dirty = True # Whether a potential_run was removed since apply() was last called
 
     def __str__(self):

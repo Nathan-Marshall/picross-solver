@@ -34,3 +34,7 @@ solved:298, unsolved:2, time:4.2965521812438965
 October 8th AFTER REDUNDANT EXCLUSIVITY & GUARANTEED OVERLAP CODE REMOVED
 solved:30, unsolved:0, time:0.16583251953125
 solved:298, unsolved:2, time:3.6757419109344482
+
+October 10th AFTER SETTING UP tile.adjacent_runs
+solved:30, unsolved:0, time:0.1401352882385254
+solved:298, unsolved:2, time:3.2162117958068848

@@ -22,6 +22,12 @@ class PotentialRun(PotentialRunBase):
     def tiles(self):
         return self.clue_run.line[self.start:self.end]
 
+    def tile_before(self):
+        return self.clue_run.line[self.start - 1] if self.start - 1 >= 0 else None
+
+    def tile_after(self):
+        return self.clue_run.line[self.end] if self.end < len(self.clue_run.line) else None
+
     def remove_from_tiles(self):
         for tile in self.tiles():
             tile.remove_run(self)

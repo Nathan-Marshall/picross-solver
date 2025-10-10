@@ -8,6 +8,7 @@ class Tile:
         self.line_raw = line_raw
         self.col_index = col_index
         self.potential_runs = [[], []]
+        self.adjacent_runs = [] # ends just before or starts just after this tile
 
     def __str__(self):
         return f"Tile(R{self.row_index}, C{self.col_index})"
@@ -29,23 +30,11 @@ class Tile:
         modified_clue_runs = set()
 
         if state == State.FILLED:
-            for neighbour_axis in range(2):
-                on_axis_index = self.get_index(neighbour_axis)
-                off_axis_index = self.get_index(not neighbour_axis)
-                for neighbour_index in [on_axis_index - 1, on_axis_index + 1]:
-                    if neighbour_index < 0 or neighbour_index >= self.solver.puzzle.shape[neighbour_axis]:
-                        continue
-
-                    neighbour_tile = np.take(self.solver.puzzle, neighbour_index, neighbour_axis)[off_axis_index]
-                    axis_runs = neighbour_tile.potential_runs[not neighbour_axis]
-                    for potential_run in axis_runs[:]:
-                        if (potential_run.end if neighbour_index < on_axis_index else potential_run.start - 1) != on_axis_index:
-                            continue
-                        if potential_run not in potential_run.clue_run.potential_runs:
-                            continue
-                        potential_run.clue_run.remove_run(potential_run)
-                        modified_clue_runs.add(potential_run.clue_run)
-                        self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {neighbour_tile}, neighbour of filled {self}")
+            for adjacent_run in self.adjacent_runs:
+                if adjacent_run not in adjacent_run.clue_run.potential_runs:
+                    continue
+                adjacent_run.clue_run.remove_run(adjacent_run)
+                modified_clue_runs.add(adjacent_run.clue_run)
         elif state == State.CROSSED:
             for axis_runs in self.potential_runs:
                 for potential_run in axis_runs[:]:
@@ -92,3 +81,6 @@ class Tile:
     def remove_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.axis]
         axis_runs.remove(potential_run)
+
+    def add_adjacent_run(self, potential_run):
+        self.adjacent_runs.append(potential_run)
