@@ -9,17 +9,20 @@ from Solver import Solver
 
 all_puzzle_clues = picross_import("puzzles/Large.txt")
 
-def solve_main(i, display, display_steps=False, display_steps_on_callback=False):
+def solve_main(i, display, display_steps=False, display_steps_on_callback=False, catch_errors=False):
     puzzle_clues_raw = all_puzzle_clues[i]
     puzzle_name = f"Puzzle {i}"
 
     puzzle = np.zeros((len(puzzle_clues_raw[0]), len(puzzle_clues_raw[1])), dtype=int)
     solver = Solver(puzzle_name, puzzle, puzzle_clues_raw, track_changes=display, display_steps=display_steps)
 
-    try:
+    if catch_errors:
+        try:
+            solver.solve()
+        except Exception as e:
+            print(f"{e} occurred in Puzzle {i}")
+    else:
         solver.solve()
-    except Exception as e:
-        print(f"{e} occurred in Puzzle {i}")
 
     if display:
         solve_callback = partial(solve_main, i, display, display_steps=display_steps_on_callback, display_steps_on_callback=display_steps_on_callback)
@@ -50,5 +53,6 @@ def solve_all_main(display_errors, puzzles_to_solve=range(len(all_puzzle_clues))
     print(f"solved:{solved_count}, unsolved:{unsolved_count}, time:{time_elapsed}")
 
 # solve_all_main(True, range(30))
+# solve_all_main(True)
 solve_all_main(False)
 # solve_main(16, True)
