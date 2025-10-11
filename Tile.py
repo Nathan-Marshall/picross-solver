@@ -72,11 +72,11 @@ class Tile:
         return self.set_state(State.CROSSED)
 
     def add_run(self, potential_run):
-        axis_runs = self.potential_runs[potential_run.clue_run.axis]
+        axis_runs = self.potential_runs[potential_run.clue_run.line_object.axis]
         axis_runs.append(potential_run)
 
     def remove_run(self, potential_run):
-        axis_runs = self.potential_runs[potential_run.clue_run.axis]
+        axis_runs = self.potential_runs[potential_run.clue_run.line_object.axis]
         axis_runs.remove(potential_run)
 
     def add_adjacent_run(self, potential_run):
