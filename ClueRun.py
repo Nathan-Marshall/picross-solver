@@ -116,56 +116,50 @@ class ClueRun(ClueRunBase):
         return len(self.potential_runs) == 1
 
     def remove_starts_after(self, i):
-        if self.last_start() <= i:
-            return False
-
         dirty_flags = DirtyFlag.NONE
 
         while self.last_start() > i:
             dirty_flags |= self.remove_last()
 
-        dirty_flags |= self.apply()
+        if clues_dirty(dirty_flags):
+            dirty_flags |= self.apply()
 
         return dirty_flags
 
     def remove_ends_before(self, i):
-        if self.first_end() >= i:
-            return False
-
         dirty_flags = DirtyFlag.NONE
 
         while self.first_end() < i:
             dirty_flags |= self.remove_first()
 
-        dirty_flags |= self.apply()
+        if clues_dirty(dirty_flags):
+            dirty_flags |= self.apply()
 
         return dirty_flags
 
     def solve_self(self):
-        if self.is_fixed():
-            return False
-
         dirty_flags = DirtyFlag.NONE
 
-        for potential_run in self.potential_runs[:]:
-            if potential_run not in self.potential_runs:
-                continue
+        if self.is_fixed():
+            return dirty_flags
 
-            #TODO: Whenever runs are removed, automatically remove any new guaranteed overlaps, rather
-            # than checking here.
+        #TODO: Whenever runs are removed, automatically remove any new guaranteed overlaps, rather
+        # than checking here.
 
-            # SOLVE SELF 1)
-            # Trim guaranteed overlap with adjacent ClueRuns:
-            # Remove any start that comes before or adjacent to prev_run.first_end()
-            # or any end that comes after or adjacent to next_run.last_start().
-            if self.prev_run is not None and potential_run.start <= self.prev_run.first_end():
-                dirty_flags |= self.remove_run(potential_run)
-                continue
-            if self.next_run is not None and potential_run.end >= self.next_run.last_start():
-                dirty_flags |= self.remove_run(potential_run)
-                continue
+        # Trim guaranteed overlap with adjacent ClueRuns:
+        # Remove any start that comes before or adjacent to prev_run.first_end()
+        # or any end that comes after or adjacent to next_run.last_start().
+        if self.prev_run is not None:
+            while self.first_start() <= self.prev_run.first_end():
+                dirty_flags |= self.remove_first()
 
-        dirty_flags |= self.apply()
+        if self.next_run is not None:
+            while self.last_end() >= self.next_run.last_start():
+                dirty_flags |= self.remove_last()
+
+        if clues_dirty(dirty_flags):
+            dirty_flags |= self.apply()
+
         return dirty_flags
 
     # Apply known tiles to the board
