@@ -144,18 +144,6 @@ class Solver(SolverBase):
 
         return dirty_flags
 
-    def init_line_clue(self, line_clue, axis, line_index, clue_run_lengths, line):
-        deduction = len(line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
-
-        run_start = 0
-        clue_run = None
-        for clue_index, run_length in enumerate(clue_run_lengths):
-            clue_run = ClueRun(self, axis, line_index, clue_index, line, clue_run, run_length, run_start, run_start + run_length + deduction)
-            line_clue.append(clue_run)
-            run_start += run_length + 1
-
-        return line_clue
-
     def solving_pass(self):
         dirty_flags = DirtyFlag.NONE
 
