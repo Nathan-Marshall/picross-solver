@@ -16,6 +16,9 @@ class DirtyFlag:
 def board_dirty(dirty_flags):
     return DirtyFlag.BOARD & dirty_flags
 
+def clues_dirty(dirty_flags):
+    return DirtyFlag.CLUES & dirty_flags
+
 def axis_name(axis):
     return "cols" if axis else "rows"
 
