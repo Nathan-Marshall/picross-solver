@@ -63,23 +63,6 @@ def state_name_verb(state):
 def puzzle_and_transpose(puzzle):
     return [puzzle, puzzle.transpose()]
 
-def set_state(state, line, start, end=None):
-    if end is None:
-        end = start + 1
-
-    dirty_flags = DirtyFlag.NONE
-
-    for tile in line[start:end]:
-        dirty_flags |= tile.set_state(state)
-
-    return dirty_flags
-
-def fill(line, start, end=None):
-    return set_state(State.FILLED, line, start, end)
-
-def cross(line, start, end=None):
-    return set_state(State.CROSSED, line, start, end)
-
 # Find the index of the next tile with the given state
 def find_next_start(line, i, state=State.FILLED):
     for j in range(i, len(line)):

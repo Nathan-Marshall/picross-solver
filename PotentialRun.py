@@ -20,13 +20,13 @@ class PotentialRun(PotentialRunBase):
         return f"PotentialRun({potential_run_name(self.clue_run.line_object.axis, self.clue_run.line_object.line_index, self.clue_run.clue_index, self.start, self.end)})"
 
     def tiles(self):
-        return self.clue_run.line_object.line_raw[self.start:self.end]
+        return self.clue_run.line_object.puzzle_line[self.start:self.end]
 
     def tile_before(self):
-        return self.clue_run.line_object.line_raw[self.start - 1] if self.start - 1 >= 0 else None
+        return self.clue_run.line_object.puzzle_line[self.start - 1] if self.start - 1 >= 0 else None
 
     def tile_after(self):
-        return self.clue_run.line_object.line_raw[self.end] if self.end < len(self.clue_run.line_object.line_raw) else None
+        return self.clue_run.line_object.puzzle_line[self.end] if self.end < len(self.clue_run.line_object.puzzle_line) else None
 
     def remove_from_tiles(self):
         for tile in self.tiles():

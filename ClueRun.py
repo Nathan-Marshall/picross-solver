@@ -168,14 +168,14 @@ class ClueRun(ClueRunBase):
 
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
-            dirty_flags |= fill(self.line_object.line_raw, i)
+            dirty_flags |= self.line_object.fill(i)
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
             if self.first_start() > 0:
-                dirty_flags |= cross(self.line_object.line_raw, self.first_start() - 1)
-            if self.last_end() < len(self.line_object.line_raw):
-                dirty_flags |= cross(self.line_object.line_raw, self.last_end())
+                dirty_flags |= self.line_object.cross(self.first_start() - 1)
+            if self.last_end() < len(self.line_object.puzzle_line):
+                dirty_flags |= self.line_object.cross(self.last_end())
 
         self.dirty = False
         return dirty_flags
