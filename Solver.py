@@ -96,6 +96,12 @@ class Solver(SolverBase):
         return all(self.verify_line(puzzle_line, clue_run_lengths)
                    for puzzle_line, clue_run_lengths in self.get_lines_and_clues_raw())
 
+    @staticmethod
+    def verify_line(puzzle_line, clue_run_lengths):
+        runs = get_run_starts_ends_lengths(puzzle_line)
+        lengths = [length for _, _, length in runs]
+        return lengths == clue_run_lengths
+
     def display_changes(self, operation, description_func: Callable[[], str]):
         """
         :param description_func:
@@ -112,12 +118,6 @@ class Solver(SolverBase):
             #     self.saved_state_title = title
 
         return dirty_flags
-
-    @staticmethod
-    def verify_line(puzzle_line, clue_run_lengths):
-        runs = get_run_starts_ends_lengths(puzzle_line)
-        lengths = [length for _, _, length in runs]
-        return lengths == clue_run_lengths
 
     def solve(self):
         dirty_flags = self.initialize_clue_runs()
