@@ -71,9 +71,6 @@ class Tile:
     def cross(self):
         return self.set_state(State.CROSSED)
 
-    def get_index(self, axis):
-        return self.row_index if axis == Axis.ROWS else self.col_index
-
     def add_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.axis]
         axis_runs.append(potential_run)

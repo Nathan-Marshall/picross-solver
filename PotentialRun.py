@@ -48,18 +48,3 @@ class PotentialRun(PotentialRunBase):
             run_end = run_start + 1
 
         return self.start <= run_start < run_end <= self.end
-
-    def contains_cross(self):
-        for tile in self.tiles():
-            if tile.is_crossed():
-                return True
-        return False
-
-    def next_to_filled(self):
-        if self.start > 0 and self.clue_run.line[self.start - 1].is_filled():
-            return True
-
-        if self.end < len(self.clue_run.line) and self.clue_run.line[self.end].is_filled():
-            return True
-
-        return False
