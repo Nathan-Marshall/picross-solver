@@ -8,7 +8,7 @@ class Tile:
         self.line_raw = line_raw
         self.col_index = col_index
         self.potential_runs = [[], []]
-        self.adjacent_runs = [] # ends just before or starts just after this tile
+        self.adjacent_potential_runs = [] # ends just before or starts just after this tile
 
     def __str__(self):
         return f"Tile(R{self.row_index}, C{self.col_index})"
@@ -30,7 +30,7 @@ class Tile:
         modified_clue_runs = set()
 
         if state == State.FILLED:
-            for adjacent_run in self.adjacent_runs:
+            for adjacent_run in self.adjacent_potential_runs:
                 if adjacent_run not in adjacent_run.clue_run.potential_runs:
                     continue
                 adjacent_run.clue_run.remove_run(adjacent_run)
@@ -80,4 +80,4 @@ class Tile:
         axis_runs.remove(potential_run)
 
     def add_adjacent_run(self, potential_run):
-        self.adjacent_runs.append(potential_run)
+        self.adjacent_potential_runs.append(potential_run)

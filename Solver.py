@@ -193,9 +193,9 @@ class Solver(SolverBase):
     def solve_line(self, axis, line_index, puzzle_line, line_clue):
         dirty_flags = DirtyFlag.NONE
 
+        # Trim any guaranteed overlap with the previous or next ClueRun
         for clue_index, clue_run in enumerate(line_clue):
-            # Any solving logic that does not require other clue runs
-            dirty_flags |= self.display_changes(clue_run.solve_self, lambda:f"Solve {clue_run}")
+            dirty_flags |= self.display_changes(clue_run.trim_overlap, lambda: f"Solve {clue_run}")
 
         trimmed_start = [False] * len(line_clue)
         ends_to_trim = [-1] * len(line_clue)

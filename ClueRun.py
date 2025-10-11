@@ -137,11 +137,11 @@ class ClueRun(ClueRunBase):
 
         return dirty_flags
 
-    def solve_self(self):
-        dirty_flags = DirtyFlag.NONE
-
+    def trim_overlap(self):
         if self.is_fixed():
-            return dirty_flags
+            return DirtyFlag.NONE
+
+        dirty_flags = DirtyFlag.NONE
 
         #TODO: Whenever runs are removed, automatically remove any new guaranteed overlaps, rather
         # than checking here.
@@ -164,10 +164,10 @@ class ClueRun(ClueRunBase):
 
     # Apply known tiles to the board
     def apply(self):
-        dirty_flags = DirtyFlag.NONE
-
         if not self.dirty:
-            return dirty_flags
+            return DirtyFlag.NONE
+
+        dirty_flags = DirtyFlag.NONE
 
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
