@@ -11,14 +11,11 @@ class ClueRunBase:
     #     self.potential_runs = [PotentialRunBase(potential_run) for potential_run in other.potential_runs]
 
 class ClueRun(ClueRunBase):
-    def __init__(self, solver, axis, line_index, clue_index, line, prev_run, length, first_start, last_end):
+    def __init__(self, line_object, clue_index, prev_run, length, first_start, last_end):
         super().__init__()
 
-        self.solver = solver
-        self.axis = axis
-        self.line_index = line_index
+        self.line_object = line_object
         self.clue_index = clue_index
-        self.line = line
 
         self.prev_run = prev_run
         if prev_run is not None:
@@ -43,7 +40,7 @@ class ClueRun(ClueRunBase):
         self.dirty = True # Whether a potential_run was removed since apply() was last called
 
     def __str__(self):
-        return f"ClueRun({clue_run_name(self.axis, self.line_index, self.clue_index)})"
+        return f"ClueRun({clue_run_name(self.line_object.axis, self.line_object.line_index, self.clue_index)})"
 
     def remove_run(self, potential_run):
         self.potential_runs.remove(potential_run)
@@ -171,14 +168,14 @@ class ClueRun(ClueRunBase):
 
         # Fill known run
         for i in range(self.last_start(), self.first_end()):
-            dirty_flags |= fill(self.line, i)
+            dirty_flags |= fill(self.line_object.line_raw, i)
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
             if self.first_start() > 0:
-                dirty_flags |= cross(self.line, self.first_start() - 1)
-            if self.last_end() < len(self.line):
-                dirty_flags |= cross(self.line, self.last_end())
+                dirty_flags |= cross(self.line_object.line_raw, self.first_start() - 1)
+            if self.last_end() < len(self.line_object.line_raw):
+                dirty_flags |= cross(self.line_object.line_raw, self.last_end())
 
         self.dirty = False
         return dirty_flags

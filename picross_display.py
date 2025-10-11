@@ -51,10 +51,10 @@ def display_picross(solver_base, title=None, block=True, btn_solve_callback=None
     ax.set_axisbelow(True)
 
     # Add row clues
-    for i, clue in enumerate(solver_base.row_and_col_clues[Axis.ROWS]):
+    for i, line_object in enumerate(solver_base.line_objects[Axis.ROWS]):
         first_hue = random.random()
-        for j, clue_run in enumerate(reversed(clue)):
-            hue = first_hue + j / len(clue)
+        for j, clue_run in enumerate(reversed(line_object.clue_runs)):
+            hue = first_hue + j / len(line_object.clue_runs)
             sat = 0 if clue_run.is_fixed() else 1
             if not hasattr(clue_run, 'color') or colorsys.hls_to_rgb(*clue_run.color)[2] != sat:
                 clue_run.color = colorsys.hls_to_rgb(hue, .5, sat)
@@ -62,10 +62,10 @@ def display_picross(solver_base, title=None, block=True, btn_solve_callback=None
             ax.text(-1 - j / 2, i, str(clue_run.length), ha='center', va='center', fontsize=16, color=clue_run.color)
 
     # Add column clues
-    for i, clue in enumerate(solver_base.row_and_col_clues[Axis.COLS]):
+    for i, line_object in enumerate(solver_base.line_objects[Axis.COLS]):
         first_hue = random.random()
-        for j, clue_run in enumerate(reversed(clue)):
-            hue = first_hue + j / len(clue)
+        for j, clue_run in enumerate(reversed(line_object.clue_runs)):
+            hue = first_hue + j / len(line_object.clue_runs)
             sat = 0 if clue_run.is_fixed() else 1
             if not hasattr(clue_run, 'color'):
                 clue_run.color = colorsys.hls_to_rgb(hue, .5, sat)
@@ -81,9 +81,9 @@ def display_picross(solver_base, title=None, block=True, btn_solve_callback=None
                 ax.plot([col - cross_radius, col + cross_radius], [row + cross_radius, row - cross_radius], color='black')
 
     # Draw each ClueRun overlay
-    for axis, line_index, line_clue in solver_base.enumerate_all_line_clues():
-        for clue_index, clue_run in enumerate(line_clue):
-            draw_clue_run(ax, clue_run, line_index, clue_index, len(line_clue), axis)
+    for line_object in solver_base.get_all_line_objects():
+        for clue_run in line_object.clue_runs:
+            draw_clue_run(ax, clue_run, line_object.line_index, clue_run.clue_index, len(line_object.clue_runs), line_object.axis)
 
     # Hide the x and y axis labels and ticks
     ax.set_xticklabels([])
