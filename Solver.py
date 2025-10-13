@@ -87,20 +87,8 @@ class Solver(SolverBase):
                 for axis_clues_raw in self.row_and_col_clues_raw
                 for line_clue_raw in axis_clues_raw]
 
-    def get_lines_and_clues_raw(self):
-        puzzle_lines = self.get_all_puzzle_lines()
-        line_clues_raw = self.get_all_line_clues_raw()
-        return zip(puzzle_lines, line_clues_raw)
-
     def verify(self):
-        return all(self.verify_line(puzzle_line, clue_run_lengths)
-                   for puzzle_line, clue_run_lengths in self.get_lines_and_clues_raw())
-
-    @staticmethod
-    def verify_line(puzzle_line, clue_run_lengths):
-        runs = get_run_starts_ends_lengths(puzzle_line)
-        lengths = [length for _, _, length in runs]
-        return lengths == clue_run_lengths
+        return all(line_object.verify() for line_object in self.get_all_line_objects())
 
     def display_changes(self, operation, description_func: Callable[[], str]):
         """

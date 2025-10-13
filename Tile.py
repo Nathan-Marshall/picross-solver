@@ -23,7 +23,7 @@ class Tile:
         dirty_flags = DirtyFlag.BOARD
 
         # Uncomment and modify this line to display and break on a specific tile
-        # self.solver.assert_puzzle(self.row_index != 8 or self.col_index != 18, f"{state_name_verb(state).capitalize()}ing {self}")
+        #self.solver.assert_puzzle(self.row_index != 15 or self.col_index != 1, f"{state_name_verb(state).capitalize()}ing {self}")
 
         self.solver.assert_puzzle(self.is_unknown(), f"Tried to {state_name_verb(state)} {self} but it's already {state_name(self.get_state())}")
 

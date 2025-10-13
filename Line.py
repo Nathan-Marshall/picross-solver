@@ -1,4 +1,5 @@
 from functools import partial
+from line_profiler_pycharm import profile
 
 from helpers import *
 from ClueRun import ClueRun
@@ -8,6 +9,7 @@ class Line:
         self.solver = solver
         self.axis = axis
         self.line_index = line_index
+        self.clue_run_lengths = clue_run_lengths
         self.puzzle_line = puzzle_line
         self.clue_runs = []
         self.filled_runs = []
@@ -20,6 +22,12 @@ class Line:
             clue_run = ClueRun(self, clue_index, clue_run, run_length, run_start, run_start + run_length + deduction)
             self.clue_runs.append(clue_run)
             run_start += run_length + 1
+
+    def verify(self):
+        for (start, end), length in zip(self.filled_runs, self.clue_run_lengths):
+            if end - start != length:
+                return False
+        return True
 
     def set_state(self, state, start, end=None):
         if end is None:
@@ -45,25 +53,27 @@ class Line:
         if end is None:
             end = start + 1
 
-        connected_or_added = False
+        connected_or_added_index = None
         i = 0
         while i < len(self.filled_runs):
             existing_start, existing_end = self.filled_runs[i]
             if existing_start <= end and existing_end >= start:
-                if not connected_or_added:
+                if connected_or_added_index is None:
                     self.filled_runs[i] = (min(existing_start, start), max(existing_end, end))
-                    connected_or_added = True
+                    connected_or_added_index = i
                 else:
+                    connected_start, connected_end = self.filled_runs[connected_or_added_index]
+                    self.filled_runs[connected_or_added_index] = (min(existing_start, connected_start), max(existing_end, connected_end))
                     self.filled_runs.pop(i)
                     continue
             elif existing_start > end:
-                if not connected_or_added:
+                if connected_or_added_index is None:
                     self.filled_runs.insert(i, (start, end))
-                    connected_or_added = True
+                    connected_or_added_index = i
                 break
             i += 1
 
-        if not connected_or_added:
+        if connected_or_added_index is None:
             self.filled_runs.append((start, end))
 
     def solve_line(self):

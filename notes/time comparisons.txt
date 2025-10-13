@@ -42,3 +42,7 @@ solved:298, unsolved:2, time:3.2162117958068848
 October 13th AFTER ADDING Line.filled_runs
 solved:30, unsolved:0, time:0.1300060749053955
 solved:298, unsolved:2, time:3.1016502380371094
+
+October 13th AFTER FIXING Line.filled_runs AND SPEEDING UP VERIFICATION
+solved:30, unsolved:0, time:0.1289992332458496
+solved:298, unsolved:2, time:2.9180026054382324
