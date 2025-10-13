@@ -38,3 +38,7 @@ solved:298, unsolved:2, time:3.6757419109344482
 October 10th AFTER SETTING UP tile.adjacent_runs
 solved:30, unsolved:0, time:0.1401352882385254
 solved:298, unsolved:2, time:3.2162117958068848
+
+October 13th AFTER ADDING Line.filled_runs
+solved:30, unsolved:0, time:0.1300060749053955
+solved:298, unsolved:2, time:3.1016502380371094

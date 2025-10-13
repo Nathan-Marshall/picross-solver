@@ -16,9 +16,11 @@ class Tile:
     def get_state(self):
         return self.line_raw[self.col_index]
 
-    def set_state(self, state):
+    def set_state(self, state, fill_axis=None):
         if self.is_state(state):
-            return False
+            return DirtyFlag.NONE
+
+        dirty_flags = DirtyFlag.BOARD
 
         # Uncomment and modify this line to display and break on a specific tile
         # self.solver.assert_puzzle(self.row_index != 8 or self.col_index != 18, f"{state_name_verb(state).capitalize()}ing {self}")
@@ -33,22 +35,26 @@ class Tile:
             for adjacent_run in self.adjacent_potential_runs:
                 if adjacent_run not in adjacent_run.clue_run.potential_runs:
                     continue
-                adjacent_run.clue_run.remove_run(adjacent_run)
+                dirty_flags |= adjacent_run.clue_run.remove_run(adjacent_run)
                 modified_clue_runs.add(adjacent_run.clue_run)
+
+            for axis in [Axis.ROWS, Axis.COLS]:
+                if axis != fill_axis:
+                    self.solver.line_objects[axis][self.line_index(axis)].add_filled_run(self.line_index(not axis))
         elif state == State.CROSSED:
             for axis_runs in self.potential_runs:
                 for potential_run in axis_runs[:]:
                     if potential_run not in potential_run.clue_run.potential_runs:
                         continue
-                    potential_run.clue_run.remove_run(potential_run)
+                    dirty_flags |= potential_run.clue_run.remove_run(potential_run)
                     modified_clue_runs.add(potential_run.clue_run)
                     self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {self}")
             self.solver.assert_puzzle(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS], f"Failed to clear all potential runs from crossed {self}")
 
         for modified_clue_run in modified_clue_runs:
-            modified_clue_run.apply()
+            dirty_flags |= modified_clue_run.apply()
 
-        return True
+        return dirty_flags
 
     def is_state(self, state):
         return self.get_state() == state
@@ -70,6 +76,9 @@ class Tile:
 
     def cross(self):
         return self.set_state(State.CROSSED)
+
+    def line_index(self, axis):
+        return self.row_index if axis == Axis.ROWS else self.col_index
 
     def add_run(self, potential_run):
         axis_runs = self.potential_runs[potential_run.clue_run.line_object.axis]

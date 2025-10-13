@@ -28,7 +28,10 @@ class Line:
         dirty_flags = DirtyFlag.NONE
 
         for tile in self.puzzle_line[start:end]:
-            dirty_flags |= tile.set_state(state)
+            dirty_flags |= tile.set_state(state, fill_axis=self.axis)
+
+        if state == State.FILLED and board_dirty(dirty_flags):
+            self.add_filled_run(start, end)
 
         return dirty_flags
 
@@ -37,6 +40,31 @@ class Line:
 
     def cross(self, start, end=None):
         return self.set_state(State.CROSSED, start, end)
+
+    def add_filled_run(self, start, end=None):
+        if end is None:
+            end = start + 1
+
+        connected_or_added = False
+        i = 0
+        while i < len(self.filled_runs):
+            existing_start, existing_end = self.filled_runs[i]
+            if existing_start <= end and existing_end >= start:
+                if not connected_or_added:
+                    self.filled_runs[i] = (min(existing_start, start), max(existing_end, end))
+                    connected_or_added = True
+                else:
+                    self.filled_runs.pop(i)
+                    continue
+            elif existing_start > end:
+                if not connected_or_added:
+                    self.filled_runs.insert(i, (start, end))
+                    connected_or_added = True
+                break
+            i += 1
+
+        if not connected_or_added:
+            self.filled_runs.append((start, end))
 
     def solve_line(self):
         dirty_flags = DirtyFlag.NONE
@@ -49,7 +77,7 @@ class Line:
         ends_to_trim = [-1] * len(self.clue_runs)
 
         # Iterate filled runs
-        for start, end, length in get_run_starts_ends_lengths(self.puzzle_line):
+        for start, end in self.filled_runs[:]:
             first_containing_clue_run = None
             last_containing_clue_run = None
 
@@ -75,22 +103,20 @@ class Line:
                     first_end = min(first_end, potential_run.end)
                     last_end = max(last_end, potential_run.end)
 
-            if last_start < start:
-                # Fill guaranteed start
-                dirty_flags |= self.solver.display_changes(partial(self.fill, last_start, start),
-                                                           lambda: f"Fill guaranteed start {run_name(self.axis, self.line_index, last_start, start)}")
+            new_start = last_start if last_start < start else end
+            new_end = first_end if first_end > end else start
 
-                if last_start == first_start and first_start > 0:
-                    dirty_flags |= self.solver.display_changes(partial(self.cross, first_start - 1),
+            if new_start < new_end:
+                # Fill guaranteed run
+                dirty_flags |= self.solver.display_changes(partial(self.fill, new_start, new_end),
+                                                           lambda: f"Fill guaranteed run {run_name(self.axis, self.line_index, new_start, new_end)}")
+
+            if last_start < start and last_start == first_start and first_start > 0:
+                dirty_flags |= self.solver.display_changes(partial(self.cross, first_start - 1),
                                                                lambda: f"Cross before guaranteed start {tile_name(self.axis, self.line_index, first_start - 1)}")
 
-            if first_end > end:
-                # Fill guaranteed end
-                dirty_flags |= self.solver.display_changes(partial(self.fill, end, first_end),
-                                                           lambda: f"Fill guaranteed end {run_name(self.axis, self.line_index, first_end, end)}")
-
-                if first_end == last_end and last_end < len(self.puzzle_line):
-                    dirty_flags |= self.solver.display_changes(partial(self.cross, last_end),
+            if first_end > end and first_end == last_end and last_end < len(self.puzzle_line):
+                dirty_flags |= self.solver.display_changes(partial(self.cross, last_end),
                                                                lambda: f"Cross after guaranteed end {tile_name(self.axis, self.line_index, last_end)}")
 
             # The first clue run that can contain this run must not start after the run does.

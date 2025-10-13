@@ -164,11 +164,8 @@ class ClueRun(ClueRunBase):
         if not self.dirty:
             return DirtyFlag.NONE
 
-        dirty_flags = DirtyFlag.NONE
-
         # Fill known run
-        for i in range(self.last_start(), self.first_end()):
-            dirty_flags |= self.line_object.fill(i)
+        dirty_flags = self.line_object.fill(self.last_start(), self.first_end())
 
         # If the run is complete, cross the tile before and the tile after
         if self.is_fixed():
