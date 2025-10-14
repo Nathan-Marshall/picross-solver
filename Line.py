@@ -78,10 +78,13 @@ class Line:
 
     def solve_line(self):
         dirty_flags = DirtyFlag.NONE
+        modified_clue_runs = set()
 
-        # Trim any guaranteed overlap with the previous or next ClueRun
-        for clue_index, clue_run in enumerate(self.clue_runs):
-            dirty_flags |= self.solver.display_changes(clue_run.trim_overlap, lambda: f"Solve {clue_run}")
+        # TODO: Try only applying here and not tracking modified ClueRun sets
+
+        # Apply all ClueRuns
+        # for clue_index, clue_run in enumerate(self.clue_runs):
+        #     dirty_flags |= self.solver.display_changes(clue_run.apply, lambda: f"Apply {clue_run}")
 
         trimmed_start = [False] * len(self.clue_runs)
         ends_to_trim = [-1] * len(self.clue_runs)
@@ -131,7 +134,7 @@ class Line:
 
             # The first clue run that can contain this run must not start after the run does.
             if not trimmed_start[first_containing_clue_run.clue_index]:
-                dirty_flags |= self.solver.display_changes(partial(first_containing_clue_run.remove_starts_after, start),
+                dirty_flags |= self.solver.display_changes(partial(first_containing_clue_run.remove_starts_after, start, modified_clue_runs),
                                                     lambda: f"{first_containing_clue_run} first to contain {run_name(self.axis, self.line_index, start, end)} so last_start={start}")
                 trimmed_start[first_containing_clue_run.clue_index] = True
 
@@ -142,7 +145,10 @@ class Line:
         for clue_index, clue_run in enumerate(self.clue_runs):
             if ends_to_trim[clue_index] != -1:
                 end = ends_to_trim[clue_index]
-                dirty_flags |= self.solver.display_changes(partial(clue_run.remove_ends_before, end),
+                dirty_flags |= self.solver.display_changes(partial(clue_run.remove_ends_before, end, modified_clue_runs),
                                                     lambda: f"{clue_run} last to contain {run_name(self.axis, self.line_index, start, end)} so first_end={end}")
+
+        for clue_run in modified_clue_runs:
+            dirty_flags |= self.solver.display_changes(clue_run.apply, lambda: f"Apply {clue_run}")
 
         return dirty_flags

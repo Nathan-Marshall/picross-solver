@@ -35,8 +35,7 @@ class Tile:
             for adjacent_run in self.adjacent_potential_runs:
                 if adjacent_run not in adjacent_run.clue_run.potential_runs:
                     continue
-                dirty_flags |= adjacent_run.clue_run.remove_run(adjacent_run)
-                modified_clue_runs.add(adjacent_run.clue_run)
+                dirty_flags |= adjacent_run.clue_run.remove_run(adjacent_run, modified_clue_runs)
 
             for axis in [Axis.ROWS, Axis.COLS]:
                 if axis != fill_axis:
@@ -46,8 +45,7 @@ class Tile:
                 for potential_run in axis_runs[:]:
                     if potential_run not in potential_run.clue_run.potential_runs:
                         continue
-                    dirty_flags |= potential_run.clue_run.remove_run(potential_run)
-                    modified_clue_runs.add(potential_run.clue_run)
+                    dirty_flags |= potential_run.clue_run.remove_run(potential_run, modified_clue_runs)
                     self.solver.assert_puzzle(potential_run not in axis_runs, f"Failed to remove potential run {potential_run} from {self}")
             self.solver.assert_puzzle(not self.potential_runs[Axis.ROWS] and not self.potential_runs[Axis.COLS], f"Failed to clear all potential runs from crossed {self}")
 

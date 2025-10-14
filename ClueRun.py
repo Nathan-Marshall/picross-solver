@@ -1,3 +1,4 @@
+from os import remove
 from line_profiler_pycharm import profile
 
 from PotentialRun import PotentialRunBase, PotentialRun
@@ -42,20 +43,42 @@ class ClueRun(ClueRunBase):
     def __str__(self):
         return f"ClueRun({clue_run_name(self.line_object.axis, self.line_object.line_index, self.clue_index)})"
 
-    def remove_run(self, potential_run):
+    def remove_run(self, potential_run, modified_clue_runs):
+        if potential_run == self.potential_runs[0]:
+            return self.remove_first(modified_clue_runs)
+        elif potential_run == self.potential_runs[-1]:
+            return self.remove_last(modified_clue_runs)
+
         self.potential_runs.remove(potential_run)
         self.dirty = True
+        modified_clue_runs.add(self)
         return DirtyFlag.CLUES | potential_run.remove_from_tiles()
 
-    def remove_first(self):
+    def remove_first(self, modified_clue_runs):
         first_run = self.potential_runs.pop(0)
         self.dirty = True
-        return DirtyFlag.CLUES | first_run.remove_from_tiles()
+        modified_clue_runs.add(self)
+        dirty_flags = DirtyFlag.CLUES | first_run.remove_from_tiles()
 
-    def remove_last(self):
+        # Cascade to next ClueRun if necessary
+        if self.next_run is not None:
+            while self.next_run.first_start() <= self.first_end():
+                dirty_flags |= self.next_run.remove_first(modified_clue_runs)
+
+        return dirty_flags
+
+    def remove_last(self, modified_clue_runs):
         last_run = self.potential_runs.pop()
         self.dirty = True
-        return DirtyFlag.CLUES | last_run.remove_from_tiles()
+        modified_clue_runs.add(self)
+        dirty_flags = DirtyFlag.CLUES | last_run.remove_from_tiles()
+
+        # Cascade to previous ClueRun if necessary
+        if self.prev_run is not None:
+            while self.prev_run.last_end() >= self.last_start():
+                dirty_flags |= self.prev_run.remove_last(modified_clue_runs)
+
+        return dirty_flags
 
     # Index of the first potential run
     def first_start(self):
@@ -112,47 +135,22 @@ class ClueRun(ClueRunBase):
     def is_fixed(self):
         return len(self.potential_runs) == 1
 
-    def remove_starts_after(self, i):
+    def remove_starts_after(self, i, modified_clue_runs):
         dirty_flags = DirtyFlag.NONE
 
         while self.last_start() > i:
-            dirty_flags |= self.remove_last()
+            dirty_flags |= self.remove_last(modified_clue_runs)
 
         if clues_dirty(dirty_flags):
             dirty_flags |= self.apply()
 
         return dirty_flags
 
-    def remove_ends_before(self, i):
+    def remove_ends_before(self, i, modified_clue_runs):
         dirty_flags = DirtyFlag.NONE
 
         while self.first_end() < i:
-            dirty_flags |= self.remove_first()
-
-        if clues_dirty(dirty_flags):
-            dirty_flags |= self.apply()
-
-        return dirty_flags
-
-    def trim_overlap(self):
-        if self.is_fixed():
-            return DirtyFlag.NONE
-
-        dirty_flags = DirtyFlag.NONE
-
-        #TODO: Whenever runs are removed, automatically remove any new guaranteed overlaps, rather
-        # than checking here.
-
-        # Trim guaranteed overlap with adjacent ClueRuns:
-        # Remove any start that comes before or adjacent to prev_run.first_end()
-        # or any end that comes after or adjacent to next_run.last_start().
-        if self.prev_run is not None:
-            while self.first_start() <= self.prev_run.first_end():
-                dirty_flags |= self.remove_first()
-
-        if self.next_run is not None:
-            while self.last_end() >= self.next_run.last_start():
-                dirty_flags |= self.remove_last()
+            dirty_flags |= self.remove_first(modified_clue_runs)
 
         if clues_dirty(dirty_flags):
             dirty_flags |= self.apply()
