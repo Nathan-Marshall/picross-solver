@@ -134,24 +134,14 @@ class ClueRun(ClueRunBase):
 
     def remove_starts_after(self, i):
         dirty_flags = DirtyFlag.NONE
-
         while self.last_start() > i:
             dirty_flags |= self.remove_last()
-
-        if clues_dirty(dirty_flags):
-            dirty_flags |= self.apply()
-
         return dirty_flags
 
     def remove_ends_before(self, i):
         dirty_flags = DirtyFlag.NONE
-
         while self.first_end() < i:
             dirty_flags |= self.remove_first()
-
-        if clues_dirty(dirty_flags):
-            dirty_flags |= self.apply()
-
         return dirty_flags
 
     # Apply known tiles to the board

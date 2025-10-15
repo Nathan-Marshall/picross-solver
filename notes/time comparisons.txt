@@ -54,3 +54,7 @@ solved:298, unsolved:2, time:2.8737752437591553
 October 13th WITHOUT KEEPING A LIST OF MODIFIED CLUE-RUNS (simpler, but marginally worse?)
 solved:30, unsolved:0, time:0.12600040435791016
 solved:298, unsolved:2, time:2.9229917526245117
+
+October 15th ONLY APPLY IN solve_line
+solved:30, unsolved:0, time:0.12399792671203613
+solved:298, unsolved:2, time:2.8651349544525146
