@@ -50,3 +50,7 @@ solved:298, unsolved:2, time:2.9180026054382324
 October 13th WITH CASCADING REMOVAL
 solved:30, unsolved:0, time:0.12399649620056152
 solved:298, unsolved:2, time:2.8737752437591553
+
+October 13th WITHOUT KEEPING A LIST OF MODIFIED CLUE-RUNS (simpler, but marginally worse?)
+solved:30, unsolved:0, time:0.12600040435791016
+solved:298, unsolved:2, time:2.9229917526245117

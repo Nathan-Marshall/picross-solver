@@ -43,40 +43,37 @@ class ClueRun(ClueRunBase):
     def __str__(self):
         return f"ClueRun({clue_run_name(self.line_object.axis, self.line_object.line_index, self.clue_index)})"
 
-    def remove_run(self, potential_run, modified_clue_runs):
+    def remove_run(self, potential_run):
         if potential_run == self.potential_runs[0]:
-            return self.remove_first(modified_clue_runs)
+            return self.remove_first()
         elif potential_run == self.potential_runs[-1]:
-            return self.remove_last(modified_clue_runs)
+            return self.remove_last()
 
         self.potential_runs.remove(potential_run)
         self.dirty = True
-        modified_clue_runs.add(self)
         return DirtyFlag.CLUES | potential_run.remove_from_tiles()
 
-    def remove_first(self, modified_clue_runs):
+    def remove_first(self):
         first_run = self.potential_runs.pop(0)
         self.dirty = True
-        modified_clue_runs.add(self)
         dirty_flags = DirtyFlag.CLUES | first_run.remove_from_tiles()
 
         # Cascade to next ClueRun if necessary
         if self.next_run is not None:
             while self.next_run.first_start() <= self.first_end():
-                dirty_flags |= self.next_run.remove_first(modified_clue_runs)
+                dirty_flags |= self.next_run.remove_first()
 
         return dirty_flags
 
-    def remove_last(self, modified_clue_runs):
+    def remove_last(self):
         last_run = self.potential_runs.pop()
         self.dirty = True
-        modified_clue_runs.add(self)
         dirty_flags = DirtyFlag.CLUES | last_run.remove_from_tiles()
 
         # Cascade to previous ClueRun if necessary
         if self.prev_run is not None:
             while self.prev_run.last_end() >= self.last_start():
-                dirty_flags |= self.prev_run.remove_last(modified_clue_runs)
+                dirty_flags |= self.prev_run.remove_last()
 
         return dirty_flags
 
@@ -135,22 +132,22 @@ class ClueRun(ClueRunBase):
     def is_fixed(self):
         return len(self.potential_runs) == 1
 
-    def remove_starts_after(self, i, modified_clue_runs):
+    def remove_starts_after(self, i):
         dirty_flags = DirtyFlag.NONE
 
         while self.last_start() > i:
-            dirty_flags |= self.remove_last(modified_clue_runs)
+            dirty_flags |= self.remove_last()
 
         if clues_dirty(dirty_flags):
             dirty_flags |= self.apply()
 
         return dirty_flags
 
-    def remove_ends_before(self, i, modified_clue_runs):
+    def remove_ends_before(self, i):
         dirty_flags = DirtyFlag.NONE
 
         while self.first_end() < i:
-            dirty_flags |= self.remove_first(modified_clue_runs)
+            dirty_flags |= self.remove_first()
 
         if clues_dirty(dirty_flags):
             dirty_flags |= self.apply()
