@@ -29,10 +29,7 @@ class Line:
                 return False
         return True
 
-    def set_state(self, state, start, end=None):
-        if end is None:
-            end = start + 1
-
+    def set_state(self, state, start, end):
         dirty_flags = DirtyFlag.NONE
 
         for tile in self.puzzle_line[start:end]:
@@ -43,11 +40,11 @@ class Line:
 
         return dirty_flags
 
-    def fill(self, start, end=None):
+    def fill(self, start, end):
         return self.set_state(State.FILLED, start, end)
 
-    def cross(self, start, end=None):
-        return self.set_state(State.CROSSED, start, end)
+    def cross(self, index):
+        return self.set_state(State.CROSSED, index, index + 1)
 
     def add_filled_run(self, start, end=None):
         if end is None:
@@ -99,7 +96,7 @@ class Line:
             # Iterate all potential runs containing the filled run, from all ClueRuns
             for clue_run in self.clue_runs:
                 for potential_run in clue_run.potential_runs:
-                    if not potential_run.contains(start, end):
+                    if potential_run.start > start or potential_run.end < end:
                         continue
 
                     if first_containing_clue_run is None:
@@ -117,20 +114,20 @@ class Line:
             if new_start < new_end:
                 # Fill guaranteed run
                 dirty_flags |= self.solver.display_changes(partial(self.fill, new_start, new_end),
-                                                           lambda: f"Fill guaranteed run {run_name(self.axis, self.line_index, new_start, new_end)}")
+                        lambda: f"Fill guaranteed run {run_name(self.axis, self.line_index, new_start, new_end)}")
 
             if last_start < start and last_start == first_start and first_start > 0:
                 dirty_flags |= self.solver.display_changes(partial(self.cross, first_start - 1),
-                                                               lambda: f"Cross before guaranteed start {tile_name(self.axis, self.line_index, first_start - 1)}")
+                        lambda: f"Cross before guaranteed start {tile_name(self.axis, self.line_index, first_start - 1)}")
 
             if first_end > end and first_end == last_end and last_end < len(self.puzzle_line):
                 dirty_flags |= self.solver.display_changes(partial(self.cross, last_end),
-                                                               lambda: f"Cross after guaranteed end {tile_name(self.axis, self.line_index, last_end)}")
+                        lambda: f"Cross after guaranteed end {tile_name(self.axis, self.line_index, last_end)}")
 
             # The first clue run that can contain this run must not start after the run does.
             if not trimmed_start[first_containing_clue_run.clue_index]:
                 dirty_flags |= self.solver.display_changes(partial(first_containing_clue_run.remove_starts_after, start),
-                                                    lambda: f"{first_containing_clue_run} first to contain {run_name(self.axis, self.line_index, start, end)} so last_start={start}")
+                        lambda: f"{first_containing_clue_run} first to contain {run_name(self.axis, self.line_index, start, end)} so last_start={start}")
                 trimmed_start[first_containing_clue_run.clue_index] = True
 
             # The last clue run that can contain this run must not end before the run does. (mark it for now)

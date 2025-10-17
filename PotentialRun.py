@@ -1,4 +1,5 @@
 from helpers import *
+from line_profiler_pycharm import profile
 
 class PotentialRunBase:
     def __init__(self):
@@ -43,8 +44,5 @@ class PotentialRun(PotentialRunBase):
         return dirty_flags
 
     # True if the given run of tiles is entirely contained within this one.
-    def contains(self, run_start, run_end=None):
-        if run_end is None:
-            run_end = run_start + 1
-
+    def contains(self, run_start, run_end):
         return self.start <= run_start and run_end <= self.end

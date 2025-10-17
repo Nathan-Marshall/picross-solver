@@ -62,3 +62,7 @@ solved:298, unsolved:2, time:2.8651349544525146
 October 17th REMOVE get_containing_potential_runs
 solved:30, unsolved:0, time:0.11999917030334473
 solved:298, unsolved:2, time:2.7675039768218994
+
+October 17th MINOR OPTIMIZATIONS
+solved:30, unsolved:0, time:0.11799192428588867
+solved:298, unsolved:2, time:2.7514805793762207
