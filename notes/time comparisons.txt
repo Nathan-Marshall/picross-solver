@@ -58,3 +58,7 @@ solved:298, unsolved:2, time:2.9229917526245117
 October 15th ONLY APPLY IN solve_line
 solved:30, unsolved:0, time:0.12399792671203613
 solved:298, unsolved:2, time:2.8651349544525146
+
+October 17th REMOVE get_containing_potential_runs
+solved:30, unsolved:0, time:0.11999917030334473
+solved:298, unsolved:2, time:2.7675039768218994

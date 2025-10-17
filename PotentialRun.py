@@ -47,4 +47,4 @@ class PotentialRun(PotentialRunBase):
         if run_end is None:
             run_end = run_start + 1
 
-        return self.start <= run_start < run_end <= self.end
+        return self.start <= run_start and run_end <= self.end

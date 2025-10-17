@@ -121,13 +121,6 @@ class ClueRun(ClueRunBase):
 
         return True
 
-    # Return the subset of this ClueRun's starts for which the resulting run contains the entire given run
-    def get_containing_potential_runs(self, run_start, run_end=None):
-        if run_end is None:
-            run_end = run_start + 1
-
-        return [potential_run for potential_run in self.potential_runs if potential_run.contains(run_start, run_end)]
-
     # True if there is only one potential run
     def is_fixed(self):
         return len(self.potential_runs) == 1

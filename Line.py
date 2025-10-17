@@ -98,16 +98,14 @@ class Line:
 
             # Iterate all potential runs containing the filled run, from all ClueRuns
             for clue_run in self.clue_runs:
-                containing_potential_runs = clue_run.get_containing_potential_runs(start, end)
+                for potential_run in clue_run.potential_runs:
+                    if not potential_run.contains(start, end):
+                        continue
 
-                if not containing_potential_runs:
-                    continue
+                    if first_containing_clue_run is None:
+                        first_containing_clue_run = clue_run
+                    last_containing_clue_run = clue_run
 
-                if first_containing_clue_run is None:
-                    first_containing_clue_run = clue_run
-                last_containing_clue_run = clue_run
-
-                for potential_run in containing_potential_runs:
                     first_start = min(first_start, potential_run.start)
                     last_start = max(last_start, potential_run.start)
                     first_end = min(first_end, potential_run.end)
