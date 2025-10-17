@@ -138,6 +138,6 @@ class Line:
             if ends_to_trim[clue_index] != -1:
                 end = ends_to_trim[clue_index]
                 dirty_flags |= self.solver.display_changes(partial(clue_run.remove_ends_before, end),
-                                                    lambda: f"{clue_run} last to contain {run_name(self.axis, self.line_index, start, end)} so first_end={end}")
+                        lambda: f"{clue_run} last to contain {run_name(self.axis, self.line_index, start, end)} so first_end={end}")
 
         return dirty_flags
