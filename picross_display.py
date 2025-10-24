@@ -7,15 +7,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Button
 
-# PRE = 0
-# MODDED_PRE = 1
-
-# is_mainloop_running = False
-# pre_state_stack = []
-# fig_pre = None
-# fig_post = None
-
-#def display_picross(puzzle, row_and_col_clues, name='Puzzle', show=True, block=True, btn_solve_callback=None):
 def display_picross(solver_base, title=None, block=True, btn_solve_callback=None):
     plt.ioff()
 
@@ -102,22 +93,6 @@ def display_picross(solver_base, title=None, block=True, btn_solve_callback=None
     return fig
 
 def display_fig(fig, block=True):
-    # global is_mainloop_running
-    # was_mainloop_running = is_mainloop_running
-    # print(plt.get_fignums())
-    #
-    # # Show the plot
-    # if is_mainloop_running:
-    #     fig.show()
-    # else:
-    #     is_mainloop_running = True
-    #     plt.show(block=block)
-    #
-    # if block:
-    #     fig.canvas.manager.window.wait_window()
-    #     if not was_mainloop_running:
-    #         is_mainloop_running = False
-
     fig.show()
     if block:
         fig.canvas.manager.window.wait_window()
@@ -171,48 +146,3 @@ def plot_arrow(ax, vertical, flip, on_axis_offset, cross_axis_offset, color):
                         [on_axis_offset, on_axis_offset + (-0.1 if flip else 0.1), on_axis_offset],
                         [cross_axis_offset - 0.1, cross_axis_offset, cross_axis_offset + 0.1],
                         color=color)
-
-# def display_changes(puzzle_raw, row_and_col_clues, operation, track_changes, display, title):
-#     global pre_state_stack
-#     global fig_pre
-#     global fig_post
-#
-#     display &= track_changes
-#
-#     if not track_changes:
-#         tiles_changed = operation()
-#         return tiles_changed
-#
-#     fig_pre_drawn = False
-#
-#     if not pre_state_stack or pre_state_stack[-1] == MODDED_PRE:
-#         fig_pre = display_picross(puzzle_raw, row_and_col_clues, show=False, name=title + " (pre)")
-#         fig_pre_drawn = True
-#
-#     pre_state_stack.append(PRE)
-#     tiles_changed = operation()
-#
-#     if tiles_changed:
-#         if pre_state_stack[-1] != MODDED_PRE and fig_post:
-#             if display:
-#                 display_fig(fig_post, block=True) # Display the previous post
-#             fig_post = None
-#
-#         if fig_pre:
-#             if display:
-#                 display_fig(fig_pre, block=False)
-#             fig_pre = None
-#
-#         existing_title = fig_post.canvas.manager.get_window_title() + ", " if fig_post else ""
-#         fig_post = display_picross(puzzle_raw, row_and_col_clues, show=False, name=existing_title + title + " (post)")
-#
-#         pre_state_stack.pop()
-#         if pre_state_stack:
-#             pre_state_stack[-1] = MODDED_PRE
-#
-#     else:
-#         pre_state_stack.pop()
-#         if fig_pre_drawn:
-#             fig_pre = None
-#
-#     return tiles_changed

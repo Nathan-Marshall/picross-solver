@@ -4,56 +4,23 @@ from collections.abc import Callable
 import numpy as np
 from line_profiler_pycharm import profile
 
-import picross_display
-from ClueRun import ClueRunBase, ClueRun
 from Line import Line
 from Tile import Tile
 from helpers import *
 from picross_display import display_picross
 
-class SolverBase:
-    def __init__(self):
-        pass
-
-    # def __init__(self, other):
-    #     self.puzzle_name = other.puzzle_name
-    #     self.puzzle_raw = copy.deepcopy(other.puzzle_raw)
-    #     self.row_and_col_clues_raw = other.row_and_col_clues_raw
-    #     self.row_and_col_clues = [
-    #         [
-    #             [ClueRunBase(clue_run) for clue_run in line_clue]
-    #             for line_clue in axis_clues
-    #         ]
-    #         for axis_clues in other.row_and_col_clues
-    #     ]
-
-# class DebugStackFrame:
-#     def __init__(self, title):
-#         self.title = title
-#         self.modified = False  # True if the board has been modified since this frame's initial state was saved
-
-class Solver(SolverBase):
+class Solver:
     def __init__(self, puzzle_name, puzzle_raw, row_and_col_clues_raw, track_changes, display_steps):
-        super().__init__()
-
         self.puzzle_name = puzzle_name
         self.puzzle_raw = puzzle_raw
         self.puzzle = self.init_tiles(puzzle_raw)
         self.row_and_col_clues_raw = row_and_col_clues_raw
         self.line_objects = [[], []]
-        # self.track_changes = track_changes
         self.display_steps = display_steps
-
-        # self.debug_stack = []
-        # self.saved_state = None
-        # self.saved_state_title = ""
 
     def assert_puzzle(self, result, message):
         if result:
             return
-
-        # if self.saved_state:
-        #     display_picross(self.saved_state, title=self.saved_state_title, block=False)
 
         display_picross(self, title=f"{self.puzzle_name} assert: {message}")
         print(f"{self.puzzle_name} assert: {message}")
@@ -100,10 +67,6 @@ class Solver(SolverBase):
         if board_dirty(dirty_flags) and self.display_steps:
             title = f"{self.puzzle_name} - After {description_func()}"
             display_picross(self, title=title)
-
-            # if self.track_changes:
-            #     self.saved_state = SolverBase(self)
-            #     self.saved_state_title = title
 
         return dirty_flags
 
