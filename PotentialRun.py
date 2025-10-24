@@ -1,15 +1,7 @@
 from helpers import *
 from line_profiler_pycharm import profile
 
-class PotentialRunBase:
-    def __init__(self):
-        pass
-
-    # def __init__(self, other):
-    #     self.start = other.start
-    #     self.end = other.end
-
-class PotentialRun(PotentialRunBase):
+class PotentialRun:
     def __init__(self, clue_run, start):
         super().__init__()
 
