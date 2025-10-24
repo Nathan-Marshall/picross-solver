@@ -66,3 +66,7 @@ solved:298, unsolved:2, time:2.7675039768218994
 October 17th MINOR OPTIMIZATIONS
 solved:30, unsolved:0, time:0.11799192428588867
 solved:298, unsolved:2, time:2.7514805793762207
+
+October 24th Line.dirty CHECK
+solved:30, unsolved:0, time:0.1165924072265625
+solved:298, unsolved:2, time:2.7353224754333496
