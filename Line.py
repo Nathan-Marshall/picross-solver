@@ -13,7 +13,6 @@ class Line:
         self.puzzle_line = puzzle_line
         self.clue_runs = []
         self.filled_runs = []
-        self.dirty = DirtyFlag.ALL # Whether ClueRuns or Tiles in this line have been modified since the start of the last solve_line
 
         deduction = len(puzzle_line) - (sum(clue_run_lengths) + len(clue_run_lengths) - 1)
 
@@ -75,14 +74,10 @@ class Line:
             self.filled_runs.append((start, end))
 
     def solve_line(self):
-        if not self.dirty:
-            return DirtyFlag.NONE
-
-        self.dirty = DirtyFlag.NONE
         dirty_flags = DirtyFlag.NONE
 
         # Apply all ClueRuns
-        for clue_run in self.clue_runs:
+        for clue_index, clue_run in enumerate(self.clue_runs):
             dirty_flags |= self.solver.display_changes(clue_run.apply, lambda: f"Apply {clue_run}")
 
         trimmed_start = [False] * len(self.clue_runs)

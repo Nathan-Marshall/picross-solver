@@ -51,13 +51,11 @@ class ClueRun(ClueRunBase):
 
         self.potential_runs.remove(potential_run)
         self.dirty = True
-        self.line_object.dirty |= DirtyFlag.CLUES
         return DirtyFlag.CLUES | potential_run.remove_from_tiles()
 
     def remove_first(self):
         first_run = self.potential_runs.pop(0)
         self.dirty = True
-        self.line_object.dirty |= DirtyFlag.CLUES
         dirty_flags = DirtyFlag.CLUES | first_run.remove_from_tiles()
 
         # Cascade to next ClueRun if necessary
@@ -70,7 +68,6 @@ class ClueRun(ClueRunBase):
     def remove_last(self):
         last_run = self.potential_runs.pop()
         self.dirty = True
-        self.line_object.dirty |= DirtyFlag.CLUES
         dirty_flags = DirtyFlag.CLUES | last_run.remove_from_tiles()
 
         # Cascade to previous ClueRun if necessary

@@ -20,8 +20,6 @@ class Tile:
         if self.is_state(state):
             return DirtyFlag.NONE
 
-        self.solver.line_objects[Axis.ROWS][self.row_index].dirty |= DirtyFlag.BOARD
-        self.solver.line_objects[Axis.COLS][self.col_index].dirty |= DirtyFlag.BOARD
         dirty_flags = DirtyFlag.BOARD
 
         # Uncomment and modify this line to display and break on a specific tile
