@@ -77,7 +77,7 @@ class Line:
         dirty_flags = DirtyFlag.NONE
 
         # Apply all ClueRuns
-        for clue_index, clue_run in enumerate(self.clue_runs):
+        for clue_run in self.clue_runs:
             dirty_flags |= self.solver.display_changes(clue_run.apply, lambda: f"Apply {clue_run}")
 
         trimmed_start = [False] * len(self.clue_runs)
